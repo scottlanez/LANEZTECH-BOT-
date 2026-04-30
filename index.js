@@ -1,136 +1,166 @@
-const express = require("express")
-const fs = require("fs")
-const path = require("path")
+// ============================================================
+//            LANEZTECH BOT - ADVANCED LAUNCHER
+// ============================================================
 
-const {
-  default: makeWASocket,
-  useMultiFileAuthState,
-  DisconnectReason
-} = require("@whiskeysockets/baileys")
+require('dotenv').config();
 
-const app = express()
-const PORT = process.env.PORT || 3000
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
+const AdmZip = require('adm-zip');
+const { spawn } = require('child_process');
+const moment = require('moment-timezone');
 
-app.use(express.json())
-app.use(express.static("public"))
+// ===== SETTINGS =====
+const BOT_NAME = 'LANEZTECH';
+const MAIN_FILE = 'index.js'; // your bot main file
+const BOT_ZIP = 'bot.zip';
+const TIMEZONE = 'Africa/Kampala';
+const BOT_DIR = __dirname;
 
-const SESSION_DIR = "./auth_info"
+// ✅ YOUR GITHUB ZIP LINK
+const DOWNLOAD_URL = 'https://github.com/scottlanez/LANEZTECH-BOT-/archive/refs/heads/main.zip';
 
-let sock
+// Files NOT to overwrite
+const KEEP_FILES = [
+  'node_modules',
+  'session',
+  '.env',
+  'index.js'
+];
 
-// 🧠 Logger
-function log(msg) {
-  console.log(`[LANEZTECH] ${msg}`)
+// ===== LOGGER =====
+function log(msg, type = "INFO") {
+  const time = moment().tz(TIMEZONE).format('HH:mm:ss');
+  console.log(`[${time}] [${type}] ${msg}`);
 }
 
-// 🚀 Start Bot
-async function startBot() {
-  try {
-    if (!fs.existsSync(SESSION_DIR)) {
-      fs.mkdirSync(SESSION_DIR)
+// ===== DOWNLOAD BOT =====
+async function downloadBot() {
+  const zipPath = path.join(BOT_DIR, BOT_ZIP);
+
+  log('Downloading bot from GitHub...');
+
+  const response = await axios({
+    url: DOWNLOAD_URL,
+    method: 'GET',
+    responseType: 'arraybuffer'
+  });
+
+  fs.writeFileSync(zipPath, response.data);
+  log('Download complete ✅');
+
+  return zipPath;
+}
+
+// ===== EXTRACT =====
+function extractBot(zipPath) {
+  log('Extracting files...');
+
+  const zip = new AdmZip(zipPath);
+
+  zip.getEntries().forEach(entry => {
+    let entryName = entry.entryName;
+
+    // 🔥 Remove GitHub root folder (important fix)
+    if (entryName.includes('/')) {
+      entryName = entryName.split('/').slice(1).join('/');
     }
 
-    const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR)
+    if (!entryName) return;
 
-    sock = makeWASocket({
-      auth: state,
-      printQRInTerminal: false
-    })
+    const filePath = path.join(BOT_DIR, entryName);
 
-    sock.ev.on("creds.update", saveCreds)
+    // Skip protected files
+    if (KEEP_FILES.some(f => entryName.startsWith(f))) return;
 
-    sock.ev.on("connection.update", async (update) => {
-      const { connection, lastDisconnect } = update
+    if (entry.isDirectory) {
+      fs.mkdirSync(filePath, { recursive: true });
+    } else {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, entry.getData());
+    }
+  });
 
-      if (connection === "connecting") {
-        log("🔄 Connecting to WhatsApp...")
+  fs.unlinkSync(zipPath);
+  log('Extraction complete ✅');
+}
+
+// ===== INSTALL =====
+function installDeps() {
+  return new Promise((resolve, reject) => {
+    log('Installing dependencies...');
+
+    const npm = spawn('npm', ['install', '--omit=dev'], {
+      cwd: BOT_DIR,
+      stdio: 'inherit'
+    });
+
+    npm.on('close', code => {
+      if (code === 0) {
+        log('Dependencies installed ✅');
+        resolve();
+      } else {
+        reject(new Error('npm install failed'));
       }
+    });
+  });
+}
 
-      if (connection === "open") {
-        log("✅ Connected successfully")
-      }
+// ===== START BOT =====
+function startBot() {
+  const file = path.join(BOT_DIR, MAIN_FILE);
 
-      if (connection === "close") {
-        const reason = lastDisconnect?.error?.output?.statusCode
+  if (!fs.existsSync(file)) {
+    log('Main bot file missing ❌', 'ERROR');
+    process.exit(1);
+  }
 
-        log("❌ Disconnected: " + reason)
+  log('Starting bot... 🚀');
 
-        if (reason !== DisconnectReason.loggedOut) {
-          log("🔁 Reconnecting...")
-          startBot()
-        } else {
-          log("🚫 Logged out. Delete session to re-pair.")
-        }
-      }
-    })
+  const bot = spawn('node', [MAIN_FILE], {
+    cwd: BOT_DIR,
+    stdio: 'inherit'
+  });
 
-    // 📩 Commands
-    sock.ev.on("messages.upsert", async ({ messages }) => {
-      const msg = messages[0]
-      if (!msg.message) return
+  bot.on('close', code => {
+    log(`Bot stopped (code ${code}). Restarting in 5s...`, 'WARN');
+    setTimeout(startBot, 5000);
+  });
 
-      const text =
-        msg.message.conversation ||
-        msg.message.extendedTextMessage?.text
+  bot.on('error', err => {
+    log(`Bot error: ${err.message}`, 'ERROR');
+  });
+}
 
-      if (!text) return
+// ===== INIT =====
+async function init() {
+  console.log(`
+╔══════════════════════════════════════╗
+║         LANEZTECH LAUNCHER           ║
+║        Fast • Clean • Stable         ║
+╚══════════════════════════════════════╝
+`);
 
-      log("📩 " + text)
+  try {
+    if (!fs.existsSync(path.join(BOT_DIR, MAIN_FILE))) {
+      log('Bot not found. Setting up...');
 
-      if (text === ".menu") {
-        await sock.sendMessage(msg.key.remoteJid, {
-          text: `🤖 *LANEZTECH BOT*
+      const zip = await downloadBot();
+      extractBot(zip);
+      await installDeps();
+    } else {
+      log('Bot already installed ✅');
+    }
 
-.menu
-.ping
-.owner`
-        })
-      }
-
-      if (text === ".ping") {
-        await sock.sendMessage(msg.key.remoteJid, {
-          text: "🏓 Pong!"
-        })
-      }
-
-      if (text === ".owner") {
-        await sock.sendMessage(msg.key.remoteJid, {
-          text: "👑 Owner: LANEZTECH"
-        })
-      }
-    })
+    startBot();
 
   } catch (err) {
-    log("💥 Error: " + err.message)
-    setTimeout(startBot, 5000)
+    log(`Fatal error: ${err.message}`, 'ERROR');
+    log('Retrying in 10 seconds...');
+    setTimeout(init, 10000);
   }
 }
 
-startBot()
-
-// 🔥 Pairing API (YOUR WEBSITE USES THIS)
-app.post("/pair", async (req, res) => {
-  const number = req.body.number
-
-  if (!number) {
-    return res.json({ error: "Enter number" })
-  }
-
-  try {
-    const code = await sock.requestPairingCode(number)
-    log("🔥 Pairing code for " + number + ": " + code)
-    res.json({ code })
-  } catch (err) {
-    res.json({ error: "Failed to generate code" })
-  }
-})
-
-// 🌐 Health check
-app.get("/", (req, res) => {
-  res.send("LANEZTECH BOT ONLINE ✅")
-})
-
-// 🚀 Start server
-app.listen(PORT, () => {
-  log("🌐 Server running on port " + PORT)
-})
+// ===== START =====
+init();
