@@ -1,97 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>LANEZTECH MD</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: #0b0f14;
-      color: white;
-      text-align: center;
-    }
-
-    .box {
-      margin-top: 80px;
-    }
-
-    input {
-      padding: 12px;
-      width: 80%;
-      border-radius: 10px;
-      border: none;
-      outline: none;
-      margin-top: 20px;
-    }
-
-    button {
-      margin-top: 20px;
-      padding: 12px 25px;
-      border: none;
-      border-radius: 10px;
-      background: #00ff88;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .card {
-      margin-top: 40px;
-      padding: 20px;
-      background: #111827;
-      border-radius: 15px;
-      width: 85%;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .code {
-      font-size: 28px;
-      color: #00ff88;
-      margin-top: 10px;
-    }
-  </style>
+  <title>LANEZTECH PRO</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <div class="box">
-    <h1>⚡ LANEZTECH MD</h1>
-    <p>Enter number to get pairing code</p>
+<div class="container">
 
-    <input id="num" placeholder="256XXXXXXXXX" />
-    <br>
-
-    <button onclick="pair()">GET PAIRING CODE</button>
-
-    <div class="card">
-      <p>Status:</p>
-      <div id="status">Waiting...</div>
-      <div class="code" id="code"></div>
-    </div>
+  <div class="header">
+    <h1>⚡ LANEZTECH PRO</h1>
+    <p>Advanced WhatsApp Control Panel</p>
   </div>
 
-<script>
-async function pair() {
-  const number = document.getElementById("num").value;
+  <div class="grid">
 
-  document.getElementById("status").innerText = "Connecting...";
+    <div class="card">
+      <h3>System Status</h3>
+      <p class="green">● Online</p>
+      <p>Latency: 42ms</p>
+    </div>
 
-  const res = await fetch("/pair", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ number })
-  });
+    <div class="card">
+      <h3>Sessions</h3>
+      <p>Active: 1</p>
+    </div>
 
-  const data = await res.json();
+  </div>
 
-  if (data.success) {
-    document.getElementById("status").innerText =
-      "Check Render logs for your pairing code";
-  } else {
-    document.getElementById("status").innerText = data.error;
-  }
-}
-</script>
+  <div class="card main">
 
+    <h2>Link WhatsApp</h2>
+
+    <input id="num" placeholder="256XXXXXXXXX">
+
+    <button onclick="getCode()">Generate Pairing Code</button>
+
+    <div class="result">
+      <h3>Pairing Code</h3>
+      <div id="code">------</div>
+      <p id="status">Waiting...</p>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
