@@ -1,21 +1,12 @@
 {
   "name": "laneztech-bot",
-  "version": "2.0.0",
-  "description": "LANEZTECH WhatsApp Bot - Fast Cloud Launcher",
+  "version": "1.0.0",
   "main": "index.js",
-  "engines": {
-    "node": ">=18"
-  },
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js"
+    "start": "node index.js"
   },
-  "author": "LANEZTECH",
-  "license": "MIT",
   "dependencies": {
-    "adm-zip": "^0.5.16",
-    "axios": "^1.8.3",
-    "dotenv": "^16.5.0",
-    "moment-timezone": "^0.5.45"
+    "@whiskeysockets/baileys": "^6.7.5",
+    "pino": "^8.0.0"
   }
 }
