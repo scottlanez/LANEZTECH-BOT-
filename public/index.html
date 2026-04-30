@@ -1,32 +1,95 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>LANEZTECH Pairing</title>
+  <title>LANEZTECH MD</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #0b0f14;
+      color: white;
+      text-align: center;
+    }
+
+    .box {
+      margin-top: 80px;
+    }
+
+    input {
+      padding: 12px;
+      width: 80%;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      margin-top: 20px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 10px;
+      background: #00ff88;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .card {
+      margin-top: 40px;
+      padding: 20px;
+      background: #111827;
+      border-radius: 15px;
+      width: 85%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .code {
+      font-size: 28px;
+      color: #00ff88;
+      margin-top: 10px;
+    }
+  </style>
 </head>
-<body style="background:#111;color:white;text-align:center;padding-top:80px;">
 
-<h1>LANEZTECH PAIRING</h1>
+<body>
 
-<input id="number" placeholder="2567xxxxxx" style="padding:10px;width:200px;">
-<br><br>
-<button onclick="pair()">Generate Code</button>
+  <div class="box">
+    <h1>⚡ LANEZTECH MD</h1>
+    <p>Enter number to get pairing code</p>
 
-<p id="result"></p>
+    <input id="num" placeholder="256XXXXXXXXX" />
+    <br>
+
+    <button onclick="pair()">GET PAIRING CODE</button>
+
+    <div class="card">
+      <p>Status:</p>
+      <div id="status">Waiting...</div>
+      <div class="code" id="code"></div>
+    </div>
+  </div>
 
 <script>
 async function pair() {
-  const number = document.getElementById("number").value;
+  const number = document.getElementById("num").value;
+
+  document.getElementById("status").innerText = "Connecting...";
 
   const res = await fetch("/pair", {
     method: "POST",
-    headers: {"Content-Type":"application/json"},
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ number })
   });
 
   const data = await res.json();
 
-  document.getElementById("result").innerText =
-    data.code ? "CODE: " + data.code : "ERROR: " + data.error;
+  if (data.success) {
+    document.getElementById("status").innerText =
+      "Check Render logs for your pairing code";
+  } else {
+    document.getElementById("status").innerText = data.error;
+  }
 }
 </script>
 
