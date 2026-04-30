@@ -1,52 +1,42 @@
 const express = require("express");
+const path = require("path");
+const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
 const pino = require("pino");
-const {
-  default: makeWASocket,
-  useMultiFileAuthState
-} = require("@whiskeysockets/baileys");
 
 const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-async function generateCode(number) {
-  const { state } = await useMultiFileAuthState("./session");
+const PORT = process.env.PORT || 3000;
 
-  const sock = makeWASocket({
-    auth: state,
-    logger: pino({ level: "silent" })
-  });
+// 🌐 Website route
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
-  return new Promise(async (resolve, reject) => {
-    try {
-      if (!sock.authState.creds.registered) {
-        const code = await sock.requestPairingCode(number);
-        resolve(code);
-      } else {
-        resolve("Already registered");
-      }
-    } catch (err) {
-      reject(err.message);
-    }
-  });
-}
-
-// API route
+// 🔥 Pairing API
 app.post("/pair", async (req, res) => {
   const { number } = req.body;
 
-  if (!number) {
-    return res.json({ error: "Number required" });
-  }
+  if (!number) return res.json({ error: "Number required" });
 
   try {
-    const code = await generateCode(number);
+    const { state } = await useMultiFileAuthState("./session");
+
+    const sock = makeWASocket({
+      auth: state,
+      logger: pino({ level: "silent" })
+    });
+
+    const code = await sock.requestPairingCode(number);
+
     res.json({ code });
+
   } catch (err) {
-    res.json({ error: err });
+    res.json({ error: err.message });
   }
 });
 
-app.listen(3000, () => {
-  console.log("🚀 Pairing website running on port 3000");
+app.listen(PORT, () => {
+  console.log("🌐 Server running on port", PORT);
 });
