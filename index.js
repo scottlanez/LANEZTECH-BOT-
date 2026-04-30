@@ -1,5 +1,5 @@
 const express = require("express")
-const app = express()
+const fs = require("fs")
 
 const {
   default: makeWASocket,
@@ -7,19 +7,27 @@ const {
   DisconnectReason
 } = require("@whiskeysockets/baileys")
 
+const app = express()
 const PORT = process.env.PORT || 3000
 
+// 🌐 Web server (REQUIRED for Render)
 app.get("/", (req, res) => {
   res.send("LANEZTECH BOT RUNNING ✅")
 })
 
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT)
+  console.log("🌐 Server running on port " + PORT)
 })
 
+// 🤖 Start Bot
 async function startBot() {
   try {
-    const { state, saveCreds } = await useMultiFileAuthState("session")
+    // 🔥 Force fresh session (fix stuck login)
+    if (fs.existsSync("./auth_info")) {
+      fs.rmSync("./auth_info", { recursive: true, force: true })
+    }
+
+    const { state, saveCreds } = await useMultiFileAuthState("auth_info")
 
     const sock = makeWASocket({
       auth: state
@@ -30,31 +38,32 @@ async function startBot() {
     sock.ev.on("connection.update", async (update) => {
       const { connection, lastDisconnect } = update
 
+      if (connection === "connecting") {
+        console.log("🔄 Connecting to WhatsApp...")
+
+        try {
+          const code = await sock.requestPairingCode("256706486353")
+          console.log("🔥 YOUR PAIRING CODE:", code)
+        } catch (err) {
+          console.log("❌ Pairing error:", err.message)
+        }
+      }
+
+      if (connection === "open") {
+        console.log("✅ BOT CONNECTED SUCCESSFULLY")
+      }
+
       if (connection === "close") {
         const shouldReconnect =
           lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
 
-        console.log("Disconnected:", shouldReconnect)
+        console.log("❌ Disconnected. Reconnecting:", shouldReconnect)
 
         if (shouldReconnect) startBot()
       }
-
-      if (connection === "open") {
-        console.log("✅ BOT CONNECTED")
-      }
-
-      // ✅ Only request pairing AFTER connection starts
-      if (connection === "connecting") {
-        const phoneNumber = "256706486353"
-        try {
-          const code = await sock.requestPairingCode(phoneNumber)
-          console.log("🔥 PAIR CODE:", code)
-        } catch (err) {
-          console.log("Pairing error:", err.message)
-        }
-      }
     })
 
+    // 📩 Commands
     sock.ev.on("messages.upsert", async ({ messages }) => {
       const msg = messages[0]
       if (!msg.message) return
@@ -63,9 +72,17 @@ async function startBot() {
         msg.message.conversation ||
         msg.message.extendedTextMessage?.text
 
+      if (!text) return
+
+      console.log("📩 Message:", text)
+
       if (text === ".menu") {
         await sock.sendMessage(msg.key.remoteJid, {
-          text: "🤖 LANEZTECH BOT\n.menu\n.ping\n.owner"
+          text: `🤖 *LANEZTECH BOT*
+
+.menu
+.ping
+.owner`
         })
       }
 
@@ -74,10 +91,16 @@ async function startBot() {
           text: "🏓 Pong!"
         })
       }
+
+      if (text === ".owner") {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: "👑 Owner: LANEZTECH"
+        })
+      }
     })
 
   } catch (err) {
-    console.log("❌ BOT CRASH:", err)
+    console.log("💥 BOT CRASHED:", err)
   }
 }
 
