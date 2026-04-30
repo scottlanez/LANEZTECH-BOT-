@@ -1,0 +1,20 @@
+{
+  "name": "LANEZTECH MD",
+  "description": "LANEZTECH MD - Advanced WhatsApp Bot System by Mutebi Henry Mubiru",
+  "logo": "https://i.ibb.co/nqsRcKDB/Xploader4.jpg",
+  "keywords": ["whatsapp", "bot", "baileys", "lanextech", "md"],
+  "repository": "https://github.com/scottlanez/LANEZTECH-BOT-",
+  "stack": "container",
+  "env": {
+    "SESSION_ID": {
+      "description": "WhatsApp session ID from pairing system (optional if using QR/login)",
+      "required": false
+    },
+    "PREFIX": {
+      "description": "Bot command prefix",
+      "value": ".",
+      "required": false
+    }
+  },
+  "buildpacks": []
+}
