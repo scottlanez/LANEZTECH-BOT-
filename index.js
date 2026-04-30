@@ -1,81 +1,82 @@
+const express = require("express")
+const app = express()
+
 const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    fetchLatestBaileysVersion,
-    DisconnectReason
-} = require("@whiskeysockets/baileys");
+  default: makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason
+} = require("@whiskeysockets/baileys")
 
-const P = require("pino");
+const PORT = process.env.PORT || 3000
 
+// ✅ Web server (REQUIRED for Render)
+app.get("/", (req, res) => {
+  res.send("LANEZTECH BOT IS RUNNING ✅")
+})
+
+app.listen(PORT, () => {
+  console.log("🌐 Server running on port " + PORT)
+})
+
+// ✅ WhatsApp Bot
 async function startBot() {
-    console.log("Starting LANEZTECH BOT...");
+  const { state, saveCreds } = await useMultiFileAuthState("session")
 
-    const { state, saveCreds } = await useMultiFileAuthState("./session");
+  const sock = makeWASocket({
+    auth: state
+  })
 
-    const { version } = await fetchLatestBaileysVersion();
+  // Pairing Code (NO QR)
+  const phoneNumber = "256706486353"
 
-    const sock = makeWASocket({
-        version,
-        auth: state,
-        printQRInTerminal: false,
-        logger: P({ level: "silent" })
-    });
+  if (!sock.authState.creds.registered) {
+    const code = await sock.requestPairingCode(phoneNumber)
+    console.log("🔥 YOUR PAIRING CODE:", code)
+  }
 
-    // SAVE SESSION
-    sock.ev.on("creds.update", saveCreds);
+  sock.ev.on("creds.update", saveCreds)
 
-    // CONNECTION HANDLER
-    sock.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect } = update;
+  sock.ev.on("connection.update", (update) => {
+    const { connection, lastDisconnect } = update
 
-        if (connection === "open") {
-            console.log("✅ LANEZTECH BOT ONLINE 🚀");
-        }
+    if (connection === "close") {
+      const shouldReconnect =
+        lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
 
-        if (connection === "close") {
-            const shouldReconnect =
-                lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+      console.log("❌ Disconnected. Reconnecting:", shouldReconnect)
 
-            console.log("❌ Disconnected. Reconnecting:", shouldReconnect);
+      if (shouldReconnect) startBot()
+    } else if (connection === "open") {
+      console.log("✅ BOT CONNECTED SUCCESSFULLY")
+    }
+  })
 
-            if (shouldReconnect) startBot();
-        }
-    });
+  sock.ev.on("messages.upsert", async ({ messages }) => {
+    const msg = messages[0]
+    if (!msg.message) return
 
-    // 📲 PAIRING CODE LOGIN (FIRST TIME ONLY)
-    if (!sock.authState.creds.registered) {
-        try {
-            const phoneNumber = "256706486353";
-            const code = await sock.requestPairingCode(phoneNumber);
-            console.log("================================");
-            console.log("PAIRING CODE:", code);
-            console.log("================================");
-        } catch (err) {
-            console.log("Pairing error:", err);
-        }
+    const text =
+      msg.message.conversation ||
+      msg.message.extendedTextMessage?.text
+
+    if (text === ".menu") {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: "🤖 LANEZTECH BOT\n\n.menu\n.ping\n.owner"
+      })
     }
 
-    // MESSAGE HANDLER
-    sock.ev.on("messages.upsert", async ({ messages }) => {
-        const msg = messages[0];
-        if (!msg.message) return;
+    if (text === ".ping") {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: "🏓 Pong!"
+      })
+    }
 
-        const text =
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text;
-
-        const from = msg.key.remoteJid;
-
-        if (!text) return;
-
-        if (text.toLowerCase() === "ping") {
-            await sock.sendMessage(from, { text: "pong ✅" });
-        }
-
-        if (text.toLowerCase() === "hi") {
-            await sock.sendMessage(from, { text: "Hello from LANEZTECH 🚀" });
-        }
-    });
+    if (text === ".owner") {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: "👑 Owner: LANEZTECH"
+      })
+    }
+  })
 }
 
-startBot();
+startBot()
