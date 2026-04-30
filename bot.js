@@ -1,71 +1,62 @@
 const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    DisconnectReason
+  default: makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason
 } = require("@whiskeysockets/baileys");
 
-const P = require("pino");
+const pino = require("pino");
 
 async function startBot() {
-    const { state, saveCreds } = await useMultiFileAuthState("session");
+  const { state, saveCreds } = await useMultiFileAuthState("./session");
 
-    const sock = makeWASocket({
-        auth: state,
-        logger: P({ level: "silent" })
-    });
+  const sock = makeWASocket({
+    auth: state,
+    printQRInTerminal: false,
+    logger: pino({ level: "silent" })
+  });
 
-    // 🔥 PAIRING CODE (NO QR)
-    if (!sock.authState.creds.registered) {
-        const phone = "256706486353"; // your number
-        const code = await sock.requestPairingCode(phone);
-        console.log("🔥 YOUR PAIRING CODE:", code);
+  sock.ev.on("connection.update", (update) => {
+    const { connection, lastDisconnect } = update;
+
+    if (connection === "open") {
+      console.log("🤖 LANEZTECH BOT CONNECTED");
     }
 
-    // Save session
-    sock.ev.on("creds.update", saveCreds);
+    if (connection === "close") {
+      const reason = lastDisconnect?.error?.output?.statusCode;
 
-    // Connection updates
-    sock.ev.on("connection.update", (update) => {
-        const { connection, lastDisconnect } = update;
+      console.log("❌ Disconnected:", reason);
 
-        if (connection === "close") {
-            const reason = lastDisconnect?.error?.output?.statusCode;
+      if (reason !== DisconnectReason.loggedOut) {
+        startBot();
+      }
+    }
+  });
 
-            console.log("❌ Disconnected:", reason);
+  sock.ev.on("creds.update", saveCreds);
 
-            if (reason !== DisconnectReason.loggedOut) {
-                startBot(); // reconnect
-            }
-        } else if (connection === "open") {
-            console.log("✅ BOT CONNECTED SUCCESSFULLY");
-        }
-    });
+  sock.ev.on("messages.upsert", async ({ messages }) => {
+    const msg = messages[0];
+    if (!msg.message) return;
 
-    // Simple command system
-    sock.ev.on("messages.upsert", async (msg) => {
-        const m = msg.messages[0];
-        if (!m.message) return;
+    const text =
+      msg.message.conversation ||
+      msg.message.extendedTextMessage?.text;
 
-        const text = m.message.conversation || m.message.extendedTextMessage?.text;
+    if (!text) return;
 
-        if (text === ".menu") {
-            await sock.sendMessage(m.key.remoteJid, {
-                text: "🔥 LANEZTECH BOT MENU 🔥\n\n.menu\n.ping\n.owner"
-            });
-        }
+    if (text === ".ping") {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: "🏓 LANEZTECH is alive!"
+      });
+    }
 
-        if (text === ".ping") {
-            await sock.sendMessage(m.key.remoteJid, {
-                text: "🏓 Pong!"
-            });
-        }
-
-        if (text === ".owner") {
-            await sock.sendMessage(m.key.remoteJid, {
-                text: "👑 Owner: LANEZTECH"
-            });
-        }
-    });
+    if (text === ".menu") {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: "🔥 LANEZTECH MENU\n\n.ping\n.menu"
+      });
+    }
+  });
 }
 
 startBot();
