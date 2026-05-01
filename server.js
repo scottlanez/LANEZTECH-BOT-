@@ -1,137 +1,96 @@
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const fs = require("fs");
 const path = require("path");
 
+const { startBot } = require("./lib/baileys");
+
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
-// =====================
-// MIDDLEWARE
-// =====================
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
+
+const sessions = new Map();
 
 // =====================
-// PORT
+// DASHBOARD
 // =====================
-const PORT = process.env.PORT || 3000;
-
-// =====================
-// FOLDERS
-// =====================
-const publicDir = path.join(__dirname, "public");
-const sessionsDir = path.join(__dirname, "sessions");
-
-// create sessions folder if missing
-if (!fs.existsSync(sessionsDir)) {
-  fs.mkdirSync(sessionsDir);
-}
-
-// =====================
-// SERVE FRONTEND
-// =====================
-app.use(express.static(publicDir));
-
 app.get("/", (req, res) => {
-  res.sendFile(path.join(publicDir, "index.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // =====================
-// SIMPLE RATE LIMIT STORAGE
-// =====================
-const cooldown = new Map();
-
-// =====================
-// PAIRING FUNCTION (MOCK OR REAL BAILEYS LATER)
-// =====================
-async function createPairingCode(number) {
-  await new Promise((r) => setTimeout(r, 1200));
-
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let code = "";
-
-  for (let i = 0; i < 8; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-
-  return code;
-}
-
-// =====================
-// API: PAIR DEVICE
+// CREATE SESSION (REAL)
 // =====================
 app.post("/api/pair", async (req, res) => {
-  try {
-    const { number } = req.body;
+  const { number } = req.body;
 
-    if (!number) {
-      return res.json({
-        success: false,
-        message: "Number required"
-      });
-    }
+  if (!number) {
+    return res.json({ success: false, message: "Number required" });
+  }
 
-    // anti spam cooldown (10s)
-    const last = cooldown.get(number);
-    const now = Date.now();
+  const sessionId = number.replace(/\D/g, "");
 
-    if (last && now - last < 10000) {
-      return res.json({
-        success: false,
-        message: "Wait before retrying"
-      });
-    }
-
-    cooldown.set(number, now);
-
-    const clean = number.replace(/\D/g, "");
-
-    const code = await createPairingCode(clean);
-
-    // save session
-    fs.writeFileSync(
-      path.join(sessionsDir, `${clean}.json`),
-      JSON.stringify(
-        {
-          number: clean,
-          code,
-          time: new Date().toISOString()
-        },
-        null,
-        2
-      )
-    );
-
-    // IMPORTANT: frontend expects "code"
+  if (sessions.has(sessionId)) {
     return res.json({
       success: true,
-      code: code
-    });
-  } catch (err) {
-    console.error("PAIR ERROR:", err);
-
-    return res.status(500).json({
-      success: false,
-      message: "Server error"
+      code: "SESSION_ACTIVE"
     });
   }
-});
 
-// =====================
-// STATUS ROUTE
-// =====================
-app.get("/api/status", (req, res) => {
-  const sessionCount = fs.readdirSync(sessionsDir).length;
+  sessions.set(sessionId, { status: "starting" });
+
+  const sock = await startBot(sessionId, (status) => {
+    sessions.set(sessionId, { status });
+    io.emit("status", { sessionId, status });
+  });
+
+  // real pairing code (Baileys style)
+  let code = "WAITING...";
+
+  sock.ev.on("connection.update", async (update) => {
+    const pairingCode = update?.pairingCode;
+
+    if (pairingCode) {
+      code = pairingCode;
+      io.emit("code", { sessionId, code });
+    }
+  });
 
   res.json({
     success: true,
-    status: "online",
-    sessions: sessionCount
+    code: "GENERATING..."
+  });
+});
+
+// =====================
+// STATUS API
+// =====================
+app.get("/api/status", (req, res) => {
+  res.json({
+    success: true,
+    sessions: sessions.size,
+    data: Array.from(sessions.entries())
+  });
+});
+
+// =====================
+// SOCKET LIVE DASHBOARD
+// =====================
+io.on("connection", (socket) => {
+  socket.emit("init", {
+    sessions: Array.from(sessions.entries())
   });
 });
 
 // =====================
 // START SERVER
 // =====================
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+  console.log("🚀 V4 Engine running on port", PORT);
 });
