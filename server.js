@@ -1,126 +1,74 @@
 const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const path = require("path");
-const fs = require("fs");
 const cors = require("cors");
-
-// WhatsApp (Baileys)
-const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static("public"));
 
-// =========================
-// SIMPLE ADMIN AUTH
-// =========================
-const ADMIN_KEY = "LANEZ123"; // change later
+const PORT = process.env.PORT || 3000;
 
-// =========================
-// SESSION STORAGE
-// =========================
-const SESSION_DIR = path.join(__dirname, "sessions");
+// Sessions folder
+const sessionsDir = path.join(__dirname, "sessions");
+if (!fs.existsSync(sessionsDir)) fs.mkdirSync(sessionsDir);
 
-// =========================
-// WHATSAPP STATE
-// =========================
-let sock;
-
-// =========================
-// INIT WHATSAPP
-// =========================
-async function startBot() {
-  const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
-
-  sock = makeWASocket({
-    auth: state,
-    printQRInTerminal: false
-  });
-
-  sock.ev.on("connection.update", (update) => {
-    io.emit("log", update);
-
-    if (update.connection === "open") {
-      io.emit("status", "connected");
-    }
-
-    if (update.connection === "close") {
-      io.emit("status", "disconnected");
-      startBot(); // auto restart
-    }
-  });
-
-  sock.ev.on("creds.update", saveCreds);
-}
-
-// =========================
-// START BOT
-// =========================
-startBot();
-
-// =========================
-// AUTH ROUTE
-// =========================
-app.post("/api/login", (req, res) => {
-  const { key } = req.body;
-
-  if (key === ADMIN_KEY) {
-    return res.json({ success: true });
-  }
-
-  return res.json({ success: false });
+// Health check
+app.get("/", (req, res) => {
+  res.send("LANEZTECH MD SERVER RUNNING ⚡");
 });
 
-// =========================
-// SESSION INFO
-// =========================
-app.get("/api/sessions", (req, res) => {
-  if (!fs.existsSync(SESSION_DIR)) return res.json({ count: 0 });
+// STATUS API
+app.get("/api/status", (req, res) => {
+  const sessions = fs.readdirSync(sessionsDir).length;
 
-  const files = fs.readdirSync(SESSION_DIR);
-  res.json({ count: files.length });
+  res.json({
+    status: "online",
+    uptime: process.uptime(),
+    sessions
+  });
 });
 
-// =========================
-// PAIR CODE (SIMPLIFIED)
-// =========================
+// PAIRING API (SAFE VERSION)
 app.post("/api/pair", async (req, res) => {
-  const { number } = req.body;
-
-  if (!sock) {
-    return res.json({ success: false, message: "Bot not ready" });
-  }
-
   try {
-    const code = await sock.requestPairingCode(number);
+    const { number } = req.body;
 
-    return res.json({
+    if (!number) {
+      return res.json({ success: false, message: "Number required" });
+    }
+
+    const clean = number.replace(/\D/g, "");
+
+    if (clean.length < 10) {
+      return res.json({ success: false, message: "Invalid number" });
+    }
+
+    // fake pairing code generator (replace later with Baileys)
+    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+    // save session
+    fs.writeFileSync(
+      path.join(sessionsDir, `${clean}.json`),
+      JSON.stringify({
+        number: clean,
+        code,
+        time: Date.now()
+      }, null, 2)
+    );
+
+    res.json({
       success: true,
       code
     });
+
   } catch (err) {
-    return res.json({
-      success: false,
-      message: err.message
-    });
+    console.log("PAIR ERROR:", err);
+    res.json({ success: false, message: "Server error" });
   }
 });
 
-// =========================
-// SOCKET DASHBOARD
-// =========================
-io.on("connection", (socket) => {
-  socket.emit("status", "connected to dashboard");
-});
-
-// =========================
-// START SERVER
-// =========================
-server.listen(3000, () => {
-  console.log("LANEZTECH MD V4 RUNNING");
+app.listen(PORT, () => {
+  console.log("Server running on port", PORT);
 });
