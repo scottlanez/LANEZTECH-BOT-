@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LANEZTECH MD V3</title>
+<title>LANEZTECH MD V4</title>
+
+<script src="/socket.io/socket.io.js"></script>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 
@@ -15,7 +17,48 @@ body {
   color: white;
 }
 
-/* HEADER */
+/* LOGIN SCREEN */
+#login {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-box {
+  background: #0b1224;
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 320px;
+  text-align: center;
+}
+
+input {
+  width: 90%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #070d1a;
+  color: white;
+}
+
+button {
+  width: 95%;
+  padding: 12px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(90deg,#00ff9c,#00c3ff);
+  font-weight: bold;
+}
+
+/* DASHBOARD */
+#dashboard {
+  display: none;
+}
+
 .header {
   text-align: center;
   padding: 20px;
@@ -37,7 +80,6 @@ body {
 .title {
   font-size: 22px;
   font-weight: 700;
-  margin-top: 10px;
 }
 
 /* GRID */
@@ -55,116 +97,132 @@ body {
   text-align: center;
 }
 
-/* INPUT */
-input {
-  width: 90%;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: #070d1a;
-  color: white;
+/* INPUT AREA */
+.section {
+  background: #0b1224;
+  margin: 15px;
+  padding: 15px;
+  border-radius: 12px;
 }
 
-/* BUTTON */
-button {
-  width: 95%;
-  padding: 12px;
-  margin-top: 10px;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(90deg,#00ff9c,#00c3ff);
-  font-weight: bold;
-}
-
-/* CODE */
+/* CODE DISPLAY */
 .code {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
   margin-top: 10px;
   color: #00ff9c;
 }
 
-/* LOG */
+/* LOGS */
 .log {
   background: black;
   padding: 10px;
-  margin: 10px;
+  margin: 15px;
   border-radius: 10px;
   font-size: 12px;
   color: #00ff9c;
+  height: 120px;
+  overflow-y: auto;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  <div class="logo">LT</div>
-  <div class="title">⚡ LANEZTECH MD V3</div>
-</div>
-
-<!-- STATS -->
-<div class="grid">
-  <div class="card">
-    ⏱ Uptime
-    <h3 id="uptime">0s</h3>
-  </div>
-
-  <div class="card">
-    💾 Memory
-    <h3 id="memory">0MB</h3>
-  </div>
-
-  <div class="card">
-    📱 Sessions
-    <h3 id="sessions">0</h3>
-  </div>
-
-  <div class="card">
-    🟢 Status
-    <h3>Online</h3>
+<!-- ================= LOGIN ================= -->
+<div id="login">
+  <div class="login-box">
+    <h3>Admin Login</h3>
+    <input id="key" placeholder="Enter Admin Key">
+    <button onclick="login()">Login</button>
+    <p id="loginMsg"></p>
   </div>
 </div>
 
-<!-- PAIR -->
-<div class="card" style="margin:15px;">
-  <h3>Pair WhatsApp</h3>
+<!-- ================= DASHBOARD ================= -->
+<div id="dashboard">
 
-  <input id="number" placeholder="256XXXXXXXXX">
+  <div class="header">
+    <div class="logo">LT</div>
+    <div class="title">⚡ LANEZTECH MD V4</div>
+    <p id="status">Connecting...</p>
+  </div>
 
-  <button onclick="pair()">Generate Code</button>
+  <!-- STATS -->
+  <div class="grid">
+    <div class="card">
+      ⏱ Uptime
+      <h3 id="uptime">-</h3>
+    </div>
 
-  <div class="code" id="code"></div>
+    <div class="card">
+      💾 Memory
+      <h3 id="memory">-</h3>
+    </div>
+
+    <div class="card">
+      📱 Sessions
+      <h3 id="sessions">-</h3>
+    </div>
+
+    <div class="card">
+      🟢 Bot
+      <h3 id="botstatus">Offline</h3>
+    </div>
+  </div>
+
+  <!-- PAIR -->
+  <div class="section">
+    <h3>Pair WhatsApp</h3>
+    <input id="number" placeholder="256XXXXXXXXX">
+    <button onclick="pair()">Generate Code</button>
+    <div class="code" id="code"></div>
+  </div>
+
+  <!-- LOGS -->
+  <div class="log" id="logs">
+    Waiting for logs...
+  </div>
+
 </div>
-
-<div class="log" id="log">System Ready...</div>
 
 <script>
+const socket = io();
 
-// =========================
-// LIVE STATS
-// =========================
-async function loadStats(){
-  const res = await fetch("/api/stats");
+// ================= LOGIN =================
+async function login(){
+  const key = document.getElementById("key").value;
+
+  const res = await fetch("/api/login", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ key })
+  });
+
   const data = await res.json();
 
-  document.getElementById("uptime").innerText = data.uptime;
-  document.getElementById("memory").innerText = data.memory;
-  document.getElementById("sessions").innerText = data.sessions;
+  if(data.success){
+    document.getElementById("login").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+  } else {
+    document.getElementById("loginMsg").innerText = "Wrong key";
+  }
 }
 
-setInterval(loadStats, 2000);
+// ================= STATS =================
+async function loadStats(){
+  const res = await fetch("/api/sessions");
+  const data = await res.json();
+
+  document.getElementById("sessions").innerText = data.count;
+}
+
+setInterval(loadStats, 3000);
 loadStats();
 
-// =========================
-// PAIRING
-// =========================
+// ================= PAIR =================
 async function pair(){
   const number = document.getElementById("number").value;
-  const codeBox = document.getElementById("code");
-  const log = document.getElementById("log");
-
-  log.innerText = "Sending request...";
 
   const res = await fetch("/api/pair", {
     method:"POST",
@@ -175,12 +233,22 @@ async function pair(){
   const data = await res.json();
 
   if(data.success){
-    codeBox.innerText = data.code;
-    log.innerText = "Code generated ✔";
+    document.getElementById("code").innerText = data.code;
   } else {
-    log.innerText = data.message;
+    document.getElementById("code").innerText = data.message;
   }
 }
+
+// ================= SOCKET LOGS =================
+socket.on("log", (data) => {
+  const box = document.getElementById("logs");
+  box.innerText += "\n" + JSON.stringify(data, null, 2);
+  box.scrollTop = box.scrollHeight;
+});
+
+socket.on("status", (status) => {
+  document.getElementById("botstatus").innerText = status;
+});
 
 </script>
 
