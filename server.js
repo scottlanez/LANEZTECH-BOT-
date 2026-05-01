@@ -1,36 +1,40 @@
-const express = require('express');
-const path = require('path');
+const { createPairingCode, sessions } = require('./pair');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+// ===== PAIR ROUTE =====
+app.post('/api/pair', async (req, res) => {
+  try {
+    const { number } = req.body;
 
-// ===== MIDDLEWARE =====
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+    if (!number) {
+      return res.json({ success: false, message: 'Number required' });
+    }
 
-// ===== HOME ROUTE =====
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'));
+    const userId = number.replace(/\D/g, '');
+
+    const code = await createPairingCode(userId);
+
+    return res.json({
+      success: true,
+      code
+    });
+
+  } catch (err) {
+    console.log('PAIR ERROR:', err);
+
+    return res.json({
+      success: false,
+      message: 'Pairing failed'
+    });
+  }
 });
 
-// ===== HEALTH CHECK (IMPORTANT FOR RENDER) =====
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    message: 'LANEZTECH server running'
-  });
-});
+// ===== SESSION CHECK =====
+app.get('/api/session/:id', (req, res) => {
+  const id = req.params.id;
 
-// ===== BASIC TEST ROUTE =====
-app.get('/api/test', (req, res) => {
-  res.json({ success: true, message: 'API working' });
-});
+  if (sessions[id]) {
+    return res.json({ status: 'active' });
+  }
 
-// ===== START SERVER =====
-app.listen(PORT, () => {
-  console.log(`
-🚀 LANEZTECH SERVER ONLINE
-🌍 Port: ${PORT}
-⚡ Status: RUNNING
-  `);
+  return res.json({ status: 'inactive' });
 });
