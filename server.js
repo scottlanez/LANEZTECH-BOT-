@@ -3,17 +3,23 @@ const cors = require('cors');
 
 const app = express();
 
+// ===== CORE =====
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// ROOT
+const startTime = Date.now();
+let totalRequests = 0;
+
+// ===== HOME =====
 app.get('/', (req, res) => {
-  res.send('LANEZTECH MD ONLINE 🚀');
+  res.sendFile(__dirname + '/public/index.html');
 });
 
-// PAIR ROUTE (NO CRASH VERSION)
+// ===== PAIR =====
 app.post('/api/pair', (req, res) => {
+  totalRequests++;
+
   const { number } = req.body || {};
 
   if (!number) {
@@ -28,20 +34,31 @@ app.post('/api/pair', (req, res) => {
     .substring(2, 10)
     .toUpperCase();
 
-  res.json({
+  return res.json({
     success: true,
     code
   });
 });
 
-// HEALTH CHECK
+// ===== STATS =====
+app.get('/api/stats', (req, res) => {
+  const uptime = Math.floor((Date.now() - startTime) / 1000);
+
+  res.json({
+    uptime,
+    requests: totalRequests,
+    status: "online"
+  });
+});
+
+// ===== HEALTH =====
 app.get('/health', (req, res) => {
   res.json({ ok: true });
 });
 
-// IMPORTANT FOR RENDER
+// ===== START =====
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("LANEZTECH running on port " + PORT);
+  console.log("LANEZTECH MD RUNNING ON PORT " + PORT);
 });
