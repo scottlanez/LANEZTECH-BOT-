@@ -5,7 +5,7 @@
 </head>
 <body style="background:#0b1220;color:white;text-align:center;padding-top:50px;">
 
-<h1>⚡ LANEZTECH MD MULTI USER</h1>
+<h1>⚡ LANEZTECH MD</h1>
 
 <input id="number" placeholder="2567XXXXXXXX" />
 <br><br>
@@ -17,6 +17,8 @@
 <script>
 async function pair() {
   const number = document.getElementById('number').value;
+
+  document.getElementById('result').innerText = "Connecting...";
 
   const res = await fetch('/api/pair', {
     method: 'POST',
@@ -30,9 +32,18 @@ async function pair() {
     document.getElementById('result').innerText =
       "PAIR CODE: " + data.code;
   } else {
-    alert(data.message);
+    document.getElementById('result').innerText =
+      "FAILED: " + data.message;
   }
 }
+
+// LIVE STATUS
+setInterval(async () => {
+  const res = await fetch('/api/state');
+  const data = await res.json();
+
+  console.log("STATUS:", data);
+}, 3000);
 </script>
 
 </body>
