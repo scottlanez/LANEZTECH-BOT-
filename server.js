@@ -1,22 +1,46 @@
 const express = require("express");
 const path = require("path");
+const os = require("os");
+const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-
-// =========================
-// Serve Frontend
-// =========================
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+// =========================
+// SYSTEM STATS
+// =========================
+function getUptime() {
+  return Math.floor(process.uptime()) + "s";
+}
+
+function getMemory() {
+  const used = process.memoryUsage().heapUsed / 1024 / 1024;
+  return used.toFixed(2) + " MB";
+}
+
+function getSessions() {
+  const dir = path.join(__dirname, "sessions");
+  if (!fs.existsSync(dir)) return 0;
+  return fs.readdirSync(dir).length;
+}
+
+// =========================
+// DASHBOARD API
+// =========================
+app.get("/api/stats", (req, res) => {
+  res.json({
+    uptime: getUptime(),
+    memory: getMemory(),
+    sessions: getSessions(),
+    platform: os.platform()
+  });
 });
 
 // =========================
-// Fake pairing generator (replace later with Baileys)
+// PAIRING SYSTEM (SIMPLIFIED STABLE)
 // =========================
 function generateCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -27,10 +51,7 @@ function generateCode() {
   return code;
 }
 
-// =========================
-// Pair API
-// =========================
-app.post("/api/pair", async (req, res) => {
+app.post("/api/pair", (req, res) => {
   const { number } = req.body;
 
   if (!number) {
@@ -43,18 +64,18 @@ app.post("/api/pair", async (req, res) => {
     return res.json({ success: false, message: "Invalid number" });
   }
 
-  // simulate delay like real system
-  setTimeout(() => {
-    const code = generateCode();
+  const code = generateCode();
 
-    return res.json({
-      success: true,
-      code,
-      number: clean
-    });
-  }, 1500);
+  return res.json({
+    success: true,
+    code,
+    number: clean
+  });
 });
 
+// =========================
+// START SERVER
+// =========================
 app.listen(PORT, () => {
-  console.log("LANEZTECH MD running on port " + PORT);
+  console.log("🚀 LANEZTECH MD V3 running on port " + PORT);
 });
