@@ -6,6 +6,10 @@ const { createPairingCode, sessions } = require('./pair');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ===== START TIME (for uptime) =====
+const startTime = Date.now();
+
+// ===== MIDDLEWARE =====
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -21,18 +25,21 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-// ===== HEALTH =====
+// ===== HEALTH CHECK =====
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// ===== PAIR =====
+// ===== PAIR API =====
 app.post('/api/pair', async (req, res) => {
   try {
     const { number } = req.body;
 
     if (!number) {
-      return res.json({ success: false, message: 'Number required' });
+      return res.json({
+        success: false,
+        message: 'Number required'
+      });
     }
 
     const userId = number.replace(/\D/g, '');
@@ -51,7 +58,7 @@ app.post('/api/pair', async (req, res) => {
     });
 
   } catch (err) {
-    console.log(err);
+    console.log('PAIR ERROR:', err);
 
     pairingState.status = 'failed';
 
@@ -62,9 +69,20 @@ app.post('/api/pair', async (req, res) => {
   }
 });
 
-// ===== STATUS =====
+// ===== LIVE STATE =====
 app.get('/api/state', (req, res) => {
   res.json(pairingState);
+});
+
+// ===== STATS API (UPTIME + SESSIONS) =====
+app.get('/api/stats', (req, res) => {
+  const uptime = Math.floor((Date.now() - startTime) / 1000);
+
+  res.json({
+    uptime,
+    sessions: Object.keys(sessions).length,
+    status: 'online'
+  });
 });
 
 // ===== SESSION CHECK =====
@@ -78,7 +96,11 @@ app.get('/api/session/:id', (req, res) => {
   return res.json({ status: 'inactive' });
 });
 
-// ===== START =====
+// ===== START SERVER =====
 app.listen(PORT, () => {
-  console.log(`🚀 LANEZTECH running on ${PORT}`);
+  console.log(`
+⚡ LANEZTECH MD SERVER RUNNING
+🌐 Port: ${PORT}
+🚀 Status: ONLINE
+  `);
 });
