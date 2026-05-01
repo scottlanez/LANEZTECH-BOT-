@@ -9,12 +9,12 @@
 body {
   margin: 0;
   font-family: Arial;
-  background: radial-gradient(circle at top, #0a0f1f, #020617);
+  background: radial-gradient(circle at top, #0b1220, #020617);
   color: white;
 }
 
 .container {
-  max-width: 400px;
+  max-width: 420px;
   margin: auto;
   padding: 20px;
 }
@@ -23,25 +23,29 @@ body {
   background: rgba(255,255,255,0.05);
   border-radius: 20px;
   padding: 20px;
-  box-shadow: 0 0 25px rgba(0,255,150,0.1);
+  box-shadow: 0 0 30px rgba(0,255,150,0.08);
 }
 
 .title {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: bold;
+  text-align: center;
 }
 
-.green {
-  color: #00ff99;
-}
+.green { color: #00ff99; }
 
-.status {
+.stats {
   display: flex;
   justify-content: space-between;
-  background: rgba(255,255,255,0.05);
+  margin: 15px 0;
+}
+
+.box {
+  background: #0f172a;
   padding: 10px;
   border-radius: 10px;
-  margin: 15px 0;
+  width: 48%;
+  text-align: center;
 }
 
 input {
@@ -49,7 +53,7 @@ input {
   padding: 12px;
   border-radius: 10px;
   border: none;
-  margin-bottom: 10px;
+  margin-top: 10px;
   background: #020617;
   color: white;
 }
@@ -57,6 +61,7 @@ input {
 button {
   width: 100%;
   padding: 12px;
+  margin-top: 10px;
   border: none;
   border-radius: 10px;
   background: linear-gradient(90deg,#00ff99,#00ccff);
@@ -64,20 +69,20 @@ button {
   cursor: pointer;
 }
 
-.code {
-  margin-top: 15px;
+.result {
   text-align: center;
-  font-size: 20px;
+  margin-top: 15px;
+  font-size: 18px;
 }
 
-.logs {
+.log {
   margin-top: 20px;
   background: black;
   padding: 10px;
   border-radius: 10px;
+  font-size: 12px;
   height: 120px;
   overflow-y: auto;
-  font-size: 12px;
   color: #00ff99;
 }
 </style>
@@ -88,80 +93,80 @@ button {
 <div class="container">
 
 <div class="card">
+
   <div class="title">⚡ <span class="green">LANEZTECH</span> MD</div>
-  <small>Elite WhatsApp Control Panel</small>
 
-  <div class="status">
-    <span>🟢 Online</span>
-    <span id="latency">-- ms</span>
+  <div class="stats">
+    <div class="box">
+      ⏱ <div id="uptime">0s</div>
+    </div>
+    <div class="box">
+      📡 <div id="requests">0</div>
+    </div>
   </div>
 
-  <div class="status">
-    <span>⏱ <span id="uptime">0s</span></span>
-    <span>📱 <span id="sessions">0</span></span>
-  </div>
+  <input id="number" placeholder="Enter number (2567XXXXXXX)">
 
-  <input id="number" placeholder="2567XXXXXXXX">
+  <button onclick="pair()">Generate Pair Code</button>
 
-  <button onclick="pair()">Generate Pairing Code</button>
-
-  <div class="code" id="code">Waiting...</div>
+  <div class="result" id="result">Waiting...</div>
 
 </div>
 
-<div class="logs" id="logs"></div>
+<div class="log" id="log"></div>
 
 </div>
 
 <script>
-let startTime = Date.now();
 
-function log(msg) {
-  const logs = document.getElementById('logs');
-  logs.innerHTML += "> " + msg + "<br>";
-  logs.scrollTop = logs.scrollHeight;
+function log(msg){
+  const el = document.getElementById('log');
+  el.innerHTML += "> " + msg + "<br>";
+  el.scrollTop = el.scrollHeight;
 }
 
-// uptime
-setInterval(() => {
-  let sec = Math.floor((Date.now() - startTime)/1000);
-  document.getElementById('uptime').innerText = sec + "s";
-}, 1000);
-
-// fake latency (can connect real later)
-setInterval(() => {
-  document.getElementById('latency').innerText = Math.floor(Math.random()*50)+" ms";
-}, 2000);
-
-async function pair() {
+async function pair(){
   const number = document.getElementById('number').value;
-  const codeBox = document.getElementById('code');
 
-  codeBox.innerText = "Generating...";
-  log("Pairing request sent...");
+  document.getElementById('result').innerText = "Generating...";
+
+  log("Sending request...");
 
   try {
     const res = await fetch('/api/pair', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ number })
     });
 
     const data = await res.json();
 
-    if (data.success) {
-      codeBox.innerText = data.code;
-      log("Pairing code generated ✔");
+    if(data.success){
+      document.getElementById('result').innerText = data.code;
+      log("Code generated ✔");
     } else {
-      codeBox.innerText = "Failed";
+      document.getElementById('result').innerText = "Failed";
       log("Error: " + data.message);
     }
 
   } catch (err) {
-    codeBox.innerText = "Server Error";
-    log("Server error...");
+    document.getElementById('result').innerText = "Server error";
+    log("Server error");
   }
 }
+
+// LIVE STATS
+async function loadStats(){
+  const res = await fetch('/api/stats');
+  const data = await res.json();
+
+  document.getElementById('uptime').innerText = data.uptime + "s";
+  document.getElementById('requests').innerText = data.requests;
+}
+
+setInterval(loadStats, 2000);
+loadStats();
+
 </script>
 
 </body>
