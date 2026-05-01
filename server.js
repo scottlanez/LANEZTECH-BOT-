@@ -3,36 +3,52 @@ const fs = require("fs");
 const path = require("path");
 
 const app = express();
+
+// =====================
+// MIDDLEWARE
+// =====================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // =====================
-// CONFIG
+// PORT
 // =====================
 const PORT = process.env.PORT || 3000;
 
-// sessions folder (auto create)
+// =====================
+// FOLDERS
+// =====================
+const publicDir = path.join(__dirname, "public");
 const sessionsDir = path.join(__dirname, "sessions");
+
+// create sessions folder if missing
 if (!fs.existsSync(sessionsDir)) {
   fs.mkdirSync(sessionsDir);
 }
 
 // =====================
-// SIMPLE MEMORY STORE (anti spam)
+// SERVE FRONTEND
 // =====================
-const requestMap = new Map();
+app.use(express.static(publicDir));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(publicDir, "index.html"));
+});
 
 // =====================
-// MOCK / REAL PAIRING FUNCTION
-// Replace this with Baileys logic later
+// SIMPLE RATE LIMIT STORAGE
+// =====================
+const cooldown = new Map();
+
+// =====================
+// PAIRING FUNCTION (MOCK OR REAL BAILEYS LATER)
 // =====================
 async function createPairingCode(number) {
-  // simulate delay like real WhatsApp pairing
-  await new Promise((r) => setTimeout(r, 1500));
+  await new Promise((r) => setTimeout(r, 1200));
 
-  // generate fake but realistic code
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";
+
   for (let i = 0; i < 8; i++) {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
@@ -41,7 +57,7 @@ async function createPairingCode(number) {
 }
 
 // =====================
-// API ROUTE: PAIR DEVICE
+// API: PAIR DEVICE
 // =====================
 app.post("/api/pair", async (req, res) => {
   try {
@@ -54,31 +70,29 @@ app.post("/api/pair", async (req, res) => {
       });
     }
 
-    // basic spam protection (10 sec cooldown per number)
-    const lastTime = requestMap.get(number);
+    // anti spam cooldown (10s)
+    const last = cooldown.get(number);
     const now = Date.now();
 
-    if (lastTime && now - lastTime < 10000) {
+    if (last && now - last < 10000) {
       return res.json({
         success: false,
-        message: "Please wait before retrying"
+        message: "Wait before retrying"
       });
     }
 
-    requestMap.set(number, now);
+    cooldown.set(number, now);
 
-    const cleanNumber = number.replace(/\D/g, "");
+    const clean = number.replace(/\D/g, "");
 
-    // generate pairing code
-    const code = await createPairingCode(cleanNumber);
+    const code = await createPairingCode(clean);
 
-    // OPTIONAL: save session file
-    const sessionFile = path.join(sessionsDir, `${cleanNumber}.json`);
+    // save session
     fs.writeFileSync(
-      sessionFile,
+      path.join(sessionsDir, `${clean}.json`),
       JSON.stringify(
         {
-          number: cleanNumber,
+          number: clean,
           code,
           time: new Date().toISOString()
         },
@@ -97,19 +111,21 @@ app.post("/api/pair", async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: "Server error"
     });
   }
 });
 
 // =====================
-// STATUS ROUTE (for dashboard)
+// STATUS ROUTE
 // =====================
 app.get("/api/status", (req, res) => {
+  const sessionCount = fs.readdirSync(sessionsDir).length;
+
   res.json({
     success: true,
     status: "online",
-    sessions: fs.readdirSync(sessionsDir).length
+    sessions: sessionCount
   });
 });
 
@@ -117,5 +133,5 @@ app.get("/api/status", (req, res) => {
 // START SERVER
 // =====================
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
