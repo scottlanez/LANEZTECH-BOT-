@@ -1,68 +1,58 @@
 const express = require('express');
 const path = require('path');
+const { startSession, sessions } = require('./pair');
 
 const app = express();
-
-// ===== CONFIG =====
 const PORT = process.env.PORT || 3000;
 
-// ===== MIDDLEWARE =====
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ===== TEMP STORAGE (later we upgrade to real sessions) =====
-let pairingData = {
-  number: null,
-  code: null,
-  status: 'idle'
-};
-
-// ===== ROUTES =====
-
-// Home (your dashboard)
+// ===== HOME =====
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-// Generate pairing code
-app.post('/api/pair', (req, res) => {
+// ===== PAIR ROUTE =====
+app.post('/api/pair', async (req, res) => {
   const { number } = req.body;
 
   if (!number) {
-    return res.status(400).json({
-      success: false,
-      message: 'Phone number is required'
-    });
+    return res.json({ success: false, message: 'Number required' });
   }
 
-  // fake code for now (we connect real bot later)
-  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+  try {
+    const userId = number.replace(/\D/g, '');
 
-  pairingData = {
-    number,
-    code,
-    status: 'generated'
-  };
+    const sock = await startSession(userId);
 
-  console.log('New Pair Request:', pairingData);
+    const code = await sock.requestPairingCode(userId);
 
-  res.json({
-    success: true,
-    code,
-    number
-  });
+    res.json({
+      success: true,
+      code
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.json({
+      success: false,
+      message: 'Pairing failed'
+    });
+  }
 });
 
-// Check status
-app.get('/api/status', (req, res) => {
-  res.json(pairingData);
+// ===== STATUS =====
+app.get('/api/status/:id', (req, res) => {
+  const id = req.params.id;
+
+  if (sessions[id]) {
+    res.json({ online: true });
+  } else {
+    res.json({ online: false });
+  }
 });
 
-// ===== START SERVER =====
 app.listen(PORT, () => {
-  console.log(`
-⚡ LANEZTECH SERVER RUNNING
-🌍 Port: ${PORT}
-🚀 Status: ACTIVE
-  `);
+  console.log(`🚀 Server running on ${PORT}`);
 });
