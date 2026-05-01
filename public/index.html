@@ -1,255 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LANEZTECH MD V4</title>
-
-<script src="/socket.io/socket.io.js"></script>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LANEZTECH MD</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Poppins;
-  background: #050814;
-  color: white;
-}
+  body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background:#050b18;
+    color:#fff;
+  }
 
-/* LOGIN SCREEN */
-#login {
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+  .container{
+    max-width:420px;
+    margin:auto;
+    padding:20px;
+  }
 
-.login-box {
-  background: #0b1224;
-  padding: 20px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 320px;
-  text-align: center;
-}
+  /* HEADER */
+  .logo{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-top:20px;
+    flex-direction:column;
+  }
 
-input {
-  width: 90%;
-  padding: 12px;
-  margin-top: 10px;
-  border-radius: 10px;
-  border: none;
-  background: #070d1a;
-  color: white;
-}
+  .circle{
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    background:linear-gradient(45deg,#00ff99,#00ccff);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    font-size:22px;
+    color:#000;
+  }
 
-button {
-  width: 95%;
-  padding: 12px;
-  margin-top: 10px;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(90deg,#00ff9c,#00c3ff);
-  font-weight: bold;
-}
+  h1{
+    margin:10px 0 0;
+    font-size:22px;
+  }
 
-/* DASHBOARD */
-#dashboard {
-  display: none;
-}
+  .subtitle{
+    font-size:13px;
+    opacity:0.7;
+  }
 
-.header {
-  text-align: center;
-  padding: 20px;
-}
+  /* CARD */
+  .card{
+    background:#0b1224;
+    padding:15px;
+    border-radius:15px;
+    margin-top:20px;
+    box-shadow:0 0 20px rgba(0,255,170,0.1);
+  }
 
-.logo {
-  width: 70px;
-  height: 70px;
-  margin: auto;
-  border-radius: 50%;
-  background: linear-gradient(45deg,#00ff9c,#00c3ff);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:bold;
-  color:black;
-}
+  .status{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px;
+    background:#111a33;
+    border-radius:12px;
+  }
 
-.title {
-  font-size: 22px;
-  font-weight: 700;
-}
+  .dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:limegreen;
+    margin-right:8px;
+  }
 
-/* GRID */
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 15px;
-}
+  .row{
+    display:flex;
+    align-items:center;
+  }
 
-.card {
-  background: #0b1224;
-  padding: 12px;
-  border-radius: 12px;
-  text-align: center;
-}
+  input{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    margin-top:10px;
+    background:#111a33;
+    color:#fff;
+    outline:none;
+  }
 
-/* INPUT AREA */
-.section {
-  background: #0b1224;
-  margin: 15px;
-  padding: 15px;
-  border-radius: 12px;
-}
+  button{
+    width:100%;
+    padding:12px;
+    margin-top:12px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(90deg,#00ff99,#00ccff);
+    font-weight:bold;
+    cursor:pointer;
+  }
 
-/* CODE DISPLAY */
-.code {
-  font-size: 22px;
-  font-weight: bold;
-  margin-top: 10px;
-  color: #00ff9c;
-}
+  .code{
+    text-align:center;
+    font-size:20px;
+    margin-top:15px;
+    letter-spacing:2px;
+  }
 
-/* LOGS */
-.log {
-  background: black;
-  padding: 10px;
-  margin: 15px;
-  border-radius: 10px;
-  font-size: 12px;
-  color: #00ff9c;
-  height: 120px;
-  overflow-y: auto;
-}
+  .log{
+    background:#000;
+    padding:10px;
+    border-radius:10px;
+    margin-top:15px;
+    font-size:13px;
+    color:#00ff99;
+    height:80px;
+    overflow:auto;
+  }
+
+  .commands{
+    margin-top:15px;
+    background:#0b1224;
+    padding:10px;
+    border-radius:10px;
+  }
+
+  .cmd{
+    padding:8px;
+    background:#111a33;
+    margin-top:5px;
+    border-radius:8px;
+  }
 </style>
 </head>
 
 <body>
 
-<!-- ================= LOGIN ================= -->
-<div id="login">
-  <div class="login-box">
-    <h3>Admin Login</h3>
-    <input id="key" placeholder="Enter Admin Key">
-    <button onclick="login()">Login</button>
-    <p id="loginMsg"></p>
-  </div>
-</div>
+<div class="container">
 
-<!-- ================= DASHBOARD ================= -->
-<div id="dashboard">
-
-  <div class="header">
-    <div class="logo">LT</div>
-    <div class="title">⚡ LANEZTECH MD V4</div>
-    <p id="status">Connecting...</p>
+  <!-- LOGO -->
+  <div class="logo">
+    <div class="circle">LT</div>
+    <h1>⚡ LANEZTECH MD</h1>
+    <div class="subtitle">Elite WhatsApp Bot Control Panel</div>
   </div>
 
-  <!-- STATS -->
-  <div class="grid">
-    <div class="card">
-      ⏱ Uptime
-      <h3 id="uptime">-</h3>
-    </div>
-
-    <div class="card">
-      💾 Memory
-      <h3 id="memory">-</h3>
-    </div>
-
-    <div class="card">
-      📱 Sessions
-      <h3 id="sessions">-</h3>
-    </div>
-
-    <div class="card">
-      🟢 Bot
-      <h3 id="botstatus">Offline</h3>
+  <!-- STATUS -->
+  <div class="card">
+    <div class="status">
+      <div class="row">
+        <div class="dot"></div>
+        <span>System Online</span>
+      </div>
+      <span id="ping">-- ms</span>
     </div>
   </div>
 
-  <!-- PAIR -->
-  <div class="section">
+  <!-- PAIRING -->
+  <div class="card">
     <h3>Pair WhatsApp</h3>
-    <input id="number" placeholder="256XXXXXXXXX">
-    <button onclick="pair()">Generate Code</button>
-    <div class="code" id="code"></div>
+    <input id="number" placeholder="2567XXXXXXXX"/>
+    <button onclick="generate()">Generate Pair Code</button>
+
+    <div class="code" id="code">------</div>
+
+    <div class="log" id="log">
+      > Waiting for request...
+    </div>
   </div>
 
-  <!-- LOGS -->
-  <div class="log" id="logs">
-    Waiting for logs...
+  <!-- COMMANDS -->
+  <div class="card">
+    <h3>Bot Commands</h3>
+    <div class="commands">
+      <div class="cmd">.menu</div>
+      <div class="cmd">.ping</div>
+      <div class="cmd">.alive</div>
+      <div class="cmd">.owner</div>
+    </div>
   </div>
 
 </div>
 
 <script>
-const socket = io();
-
-// ================= LOGIN =================
-async function login(){
-  const key = document.getElementById("key").value;
-
-  const res = await fetch("/api/login", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ key })
-  });
-
-  const data = await res.json();
-
-  if(data.success){
-    document.getElementById("login").style.display = "none";
-    document.getElementById("dashboard").style.display = "block";
-  } else {
-    document.getElementById("loginMsg").innerText = "Wrong key";
-  }
-}
-
-// ================= STATS =================
-async function loadStats(){
-  const res = await fetch("/api/sessions");
-  const data = await res.json();
-
-  document.getElementById("sessions").innerText = data.count;
-}
-
-setInterval(loadStats, 3000);
-loadStats();
-
-// ================= PAIR =================
-async function pair(){
+async function generate(){
   const number = document.getElementById("number").value;
+  const codeBox = document.getElementById("code");
+  const log = document.getElementById("log");
 
-  const res = await fetch("/api/pair", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ number })
-  });
+  log.innerHTML = "> Sending request...";
 
-  const data = await res.json();
+  try{
+    const res = await fetch("/api/pair",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ number })
+    });
 
-  if(data.success){
-    document.getElementById("code").innerText = data.code;
-  } else {
-    document.getElementById("code").innerText = data.message;
+    const data = await res.json();
+
+    if(data.success){
+      codeBox.innerText = data.code;
+      log.innerHTML = "> Code generated ✓";
+    }else{
+      log.innerHTML = "> Failed to generate code";
+    }
+
+  }catch(err){
+    log.innerHTML = "> Server error";
   }
 }
-
-// ================= SOCKET LOGS =================
-socket.on("log", (data) => {
-  const box = document.getElementById("logs");
-  box.innerText += "\n" + JSON.stringify(data, null, 2);
-  box.scrollTop = box.scrollHeight;
-});
-
-socket.on("status", (status) => {
-  document.getElementById("botstatus").innerText = status;
-});
-
 </script>
 
 </body>
