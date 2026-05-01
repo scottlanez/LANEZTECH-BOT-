@@ -5,30 +5,177 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LANEZTECH MD</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
-}
-
 body {
-  background: linear-gradient(135deg, #020617, #020617);
+  margin: 0;
+  font-family: Poppins;
+  background: #050814;
   color: white;
-  display: flex;
 }
 
-/* SIDEBAR */
-.sidebar {
-  width: 220px;
-  height: 100vh;
-  background: #020617;
+.container {
+  max-width: 420px;
+  margin: auto;
   padding: 20px;
-  border-right: 1px solid rgba(255,255,255,0.05);
 }
 
-.logo-box {
-  display
+/* HEADER */
+.header {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.logo {
+  width: 60px;
+  height: 60px;
+  margin: auto;
+  border-radius: 50%;
+  background: linear-gradient(45deg,#00ff9c,#00c3ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: black;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.subtitle {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* CARD */
+.card {
+  background: #0b1224;
+  padding: 15px;
+  border-radius: 15px;
+  margin-top: 20px;
+}
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.green {
+  color: #00ff9c;
+}
+
+/* INPUT */
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #070d1a;
+  color: white;
+  margin-top: 10px;
+}
+
+/* BUTTON */
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(90deg,#00ff9c,#00c3ff);
+  font-weight: bold;
+}
+
+/* OUTPUT */
+.code {
+  text-align: center;
+  font-size: 26px;
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+.log {
+  background: black;
+  padding: 10px;
+  border-radius: 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #00ff9c;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- TEMP LOGO -->
+  <div class="header">
+    <div class="logo">LT</div>
+    <div class="title">⚡ LANEZTECH MD</div>
+    <div class="subtitle">Elite WhatsApp Control Panel</div>
+  </div>
+
+  <!-- STATUS -->
+  <div class="card">
+    <div class="status">
+      <span>🟢 Online</span>
+      <span id="uptime">0s</span>
+    </div>
+  </div>
+
+  <!-- PAIR -->
+  <div class="card">
+    <h3>Pair WhatsApp</h3>
+
+    <input id="number" placeholder="256XXXXXXXXX">
+
+    <button onclick="pair()">Generate Pair Code</button>
+
+    <div class="code" id="code"></div>
+
+    <div class="log" id="log">Waiting...</div>
+  </div>
+
+</div>
+
+<script>
+let start = Date.now();
+
+setInterval(() => {
+  let s = Math.floor((Date.now() - start)/1000);
+  document.getElementById("uptime").innerText = s + "s";
+}, 1000);
+
+async function pair() {
+  const number = document.getElementById("number").value;
+  const codeBox = document.getElementById("code");
+  const log = document.getElementById("log");
+
+  log.innerText = "Sending request...";
+
+  const res = await fetch("/api/pair", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ number })
+  });
+
+  const data = await res.json();
+
+  if(data.success){
+    codeBox.innerText = data.code;
+    log.innerText = "Code generated ✔";
+  } else {
+    log.innerText = data.message;
+  }
+}
+</script>
+
+</body>
+  </html>
