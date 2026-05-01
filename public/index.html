@@ -1,220 +1,183 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LANEZTECH MD</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LANEZTECH MD</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+    body{
+      background:#070b18;
+      color:#fff;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      min-height:100vh;
+      padding:20px;
+    }.container{
+  width:100%;
+  max-width:420px;
+}
 
-<style>
-  body{
-    margin:0;
-    font-family: Arial, sans-serif;
-    background:#050b18;
-    color:#fff;
-  }
+.header{
+  text-align:center;
+  margin-bottom:20px;
+}
 
-  .container{
-    max-width:420px;
-    margin:auto;
-    padding:20px;
-  }
+.logo{
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  background:linear-gradient(45deg,#00ffa3,#00c2ff);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin:0 auto 10px;
+  font-weight:bold;
+  color:#000;
+}
 
-  /* HEADER */
-  .logo{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin-top:20px;
-    flex-direction:column;
-  }
+.title{
+  font-size:22px;
+  font-weight:bold;
+}
 
-  .circle{
-    width:70px;
-    height:70px;
-    border-radius:50%;
-    background:linear-gradient(45deg,#00ff99,#00ccff);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    font-size:22px;
-    color:#000;
-  }
+.subtitle{
+  font-size:12px;
+  opacity:0.7;
+  margin-top:5px;
+}
 
-  h1{
-    margin:10px 0 0;
-    font-size:22px;
-  }
+.card{
+  background:#0e1630;
+  padding:15px;
+  border-radius:15px;
+  margin-top:15px;
+  box-shadow:0 0 15px rgba(0,255,200,0.08);
+}
 
-  .subtitle{
-    font-size:13px;
-    opacity:0.7;
-  }
+.status{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:14px;
+}
 
-  /* CARD */
-  .card{
-    background:#0b1224;
-    padding:15px;
-    border-radius:15px;
-    margin-top:20px;
-    box-shadow:0 0 20px rgba(0,255,170,0.1);
-  }
+.dot{
+  width:10px;
+  height:10px;
+  background:#00ff88;
+  border-radius:50%;
+  display:inline-block;
+  margin-right:5px;
+}
 
-  .status{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:10px;
-    background:#111a33;
-    border-radius:12px;
-  }
+input{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:10px;
+  outline:none;
+  background:#0b1224;
+  color:#fff;
+}
 
-  .dot{
-    width:10px;
-    height:10px;
-    border-radius:50%;
-    background:limegreen;
-    margin-right:8px;
-  }
+button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:10px;
+  background:linear-gradient(90deg,#00ffa3,#00c2ff);
+  font-weight:bold;
+  cursor:pointer;
+}
 
-  .row{
-    display:flex;
-    align-items:center;
-  }
+.result{
+  text-align:center;
+  margin-top:10px;
+  font-size:20px;
+  font-weight:bold;
+  letter-spacing:2px;
+}
 
-  input{
-    width:100%;
-    padding:12px;
-    border:none;
-    border-radius:10px;
-    margin-top:10px;
-    background:#111a33;
-    color:#fff;
-    outline:none;
-  }
+.log{
+  background:#000;
+  padding:10px;
+  border-radius:10px;
+  margin-top:10px;
+  font-size:12px;
+  color:#00ff99;
+  height:100px;
+  overflow:auto;
+}
 
-  button{
-    width:100%;
-    padding:12px;
-    margin-top:12px;
-    border:none;
-    border-radius:10px;
-    background:linear-gradient(90deg,#00ff99,#00ccff);
-    font-weight:bold;
-    cursor:pointer;
-  }
+.section-title{
+  margin-top:15px;
+  font-size:14px;
+  opacity:0.8;
+}
 
-  .code{
-    text-align:center;
-    font-size:20px;
-    margin-top:15px;
-    letter-spacing:2px;
-  }
-
-  .log{
-    background:#000;
-    padding:10px;
-    border-radius:10px;
-    margin-top:15px;
-    font-size:13px;
-    color:#00ff99;
-    height:80px;
-    overflow:auto;
-  }
-
-  .commands{
-    margin-top:15px;
-    background:#0b1224;
-    padding:10px;
-    border-radius:10px;
-  }
-
-  .cmd{
-    padding:8px;
-    background:#111a33;
-    margin-top:5px;
-    border-radius:8px;
-  }
-</style>
+  </style>
 </head>
-
-<body>
-
-<div class="container">
-
-  <!-- LOGO -->
-  <div class="logo">
-    <div class="circle">LT</div>
-    <h1>⚡ LANEZTECH MD</h1>
+<body><div class="container">  <div class="header">
+    <div class="logo">LT</div>
+    <div class="title">⚡ LANEZTECH MD</div>
     <div class="subtitle">Elite WhatsApp Bot Control Panel</div>
-  </div>
-
-  <!-- STATUS -->
-  <div class="card">
+  </div>  <div class="card">
     <div class="status">
-      <div class="row">
-        <div class="dot"></div>
-        <span>System Online</span>
-      </div>
-      <span id="ping">-- ms</span>
+      <div><span class="dot"></span>System Online</div>
+      <div id="ping">-- ms</div>
     </div>
-  </div>
-
-  <!-- PAIRING -->
-  <div class="card">
-    <h3>Pair WhatsApp</h3>
-    <input id="number" placeholder="2567XXXXXXXX"/>
-    <button onclick="generate()">Generate Pair Code</button>
-
-    <div class="code" id="code">------</div>
-
-    <div class="log" id="log">
-      > Waiting for request...
-    </div>
-  </div>
-
-  <!-- COMMANDS -->
-  <div class="card">
-    <h3>Bot Commands</h3>
-    <div class="commands">
-      <div class="cmd">.menu</div>
-      <div class="cmd">.ping</div>
-      <div class="cmd">.alive</div>
-      <div class="cmd">.owner</div>
-    </div>
-  </div>
-
+  </div>  <div class="card">
+    <div class="section-title">Pair WhatsApp</div>
+    <input id="number" placeholder="256XXXXXXXXX" />
+    <button onclick="generateCode()">Generate Pair Code</button>
+    <div class="result" id="result">----</div><div class="log" id="log">
+  > System ready...\n
 </div>
 
-<script>
-async function generate(){
+  </div>  <div class="card">
+    <div class="section-title">Bot Commands</div>
+    <div>.menu</div>
+    <div>.ping</div>
+    <div>.alive</div>
+    <div>.owner</div>
+  </div></div><script>
+async function generateCode(){
   const number = document.getElementById("number").value;
-  const codeBox = document.getElementById("code");
+  const result = document.getElementById("result");
   const log = document.getElementById("log");
 
-  log.innerHTML = "> Sending request...";
+  if(!number){
+    result.innerText = "Enter number";
+    return;
+  }
+
+  log.innerText += "> Sending request...\n";
+  result.innerText = "Loading...";
 
   try{
     const res = await fetch("/api/pair",{
       method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ number })
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({number})
     });
 
     const data = await res.json();
 
-    if(data.success){
-      codeBox.innerText = data.code;
-      log.innerHTML = "> Code generated ✓";
+    if(data.success && data.code){
+      result.innerText = data.code;
+      log.innerText += "> Code generated ✔\n";
     }else{
-      log.innerHTML = "> Failed to generate code";
+      result.innerText = "Failed";
+      log.innerText += "> Failed to generate\n";
     }
 
-  }catch(err){
-    log.innerHTML = "> Server error";
+  }catch(e){
+    result.innerText = "Error";
+    log.innerText += "> Server error\n";
   }
 }
-</script>
-
-</body>
+</script></body>
 </html>
