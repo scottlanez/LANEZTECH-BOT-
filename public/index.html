@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LANEZTECH MD</title>
+<title>LANEZTECH MD V3</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 
@@ -15,29 +15,23 @@ body {
   color: white;
 }
 
-.container {
-  max-width: 420px;
-  margin: auto;
-  padding: 20px;
-}
-
 /* HEADER */
 .header {
   text-align: center;
-  margin-top: 20px;
+  padding: 20px;
 }
 
 .logo {
-  width: 60px;
-  height: 60px;
+  width: 70px;
+  height: 70px;
   margin: auto;
   border-radius: 50%;
   background: linear-gradient(45deg,#00ff9c,#00c3ff);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  color: black;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  color:black;
 }
 
 .title {
@@ -46,44 +40,34 @@ body {
   margin-top: 10px;
 }
 
-.subtitle {
-  font-size: 12px;
-  opacity: 0.7;
+/* GRID */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 15px;
 }
 
-/* CARD */
 .card {
   background: #0b1224;
-  padding: 15px;
-  border-radius: 15px;
-  margin-top: 20px;
-}
-
-.status {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  margin-bottom: 10px;
-}
-
-.green {
-  color: #00ff9c;
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
 }
 
 /* INPUT */
 input {
-  width: 100%;
+  width: 90%;
   padding: 12px;
   border-radius: 10px;
   border: none;
   background: #070d1a;
   color: white;
-  margin-top: 10px;
 }
 
 /* BUTTON */
 button {
-  width: 100%;
+  width: 95%;
   padding: 12px;
   margin-top: 10px;
   border: none;
@@ -92,19 +76,20 @@ button {
   font-weight: bold;
 }
 
-/* OUTPUT */
+/* CODE */
 .code {
-  text-align: center;
-  font-size: 26px;
-  margin-top: 15px;
+  font-size: 24px;
   font-weight: bold;
+  margin-top: 10px;
+  color: #00ff9c;
 }
 
+/* LOG */
 .log {
   background: black;
   padding: 10px;
+  margin: 10px;
   border-radius: 10px;
-  margin-top: 10px;
   font-size: 12px;
   color: #00ff9c;
 }
@@ -113,47 +98,68 @@ button {
 
 <body>
 
-<div class="container">
-
-  <!-- TEMP LOGO -->
-  <div class="header">
-    <div class="logo">LT</div>
-    <div class="title">⚡ LANEZTECH MD</div>
-    <div class="subtitle">Elite WhatsApp Control Panel</div>
-  </div>
-
-  <!-- STATUS -->
-  <div class="card">
-    <div class="status">
-      <span>🟢 Online</span>
-      <span id="uptime">0s</span>
-    </div>
-  </div>
-
-  <!-- PAIR -->
-  <div class="card">
-    <h3>Pair WhatsApp</h3>
-
-    <input id="number" placeholder="256XXXXXXXXX">
-
-    <button onclick="pair()">Generate Pair Code</button>
-
-    <div class="code" id="code"></div>
-
-    <div class="log" id="log">Waiting...</div>
-  </div>
-
+<div class="header">
+  <div class="logo">LT</div>
+  <div class="title">⚡ LANEZTECH MD V3</div>
 </div>
 
+<!-- STATS -->
+<div class="grid">
+  <div class="card">
+    ⏱ Uptime
+    <h3 id="uptime">0s</h3>
+  </div>
+
+  <div class="card">
+    💾 Memory
+    <h3 id="memory">0MB</h3>
+  </div>
+
+  <div class="card">
+    📱 Sessions
+    <h3 id="sessions">0</h3>
+  </div>
+
+  <div class="card">
+    🟢 Status
+    <h3>Online</h3>
+  </div>
+</div>
+
+<!-- PAIR -->
+<div class="card" style="margin:15px;">
+  <h3>Pair WhatsApp</h3>
+
+  <input id="number" placeholder="256XXXXXXXXX">
+
+  <button onclick="pair()">Generate Code</button>
+
+  <div class="code" id="code"></div>
+</div>
+
+<div class="log" id="log">System Ready...</div>
+
 <script>
-let start = Date.now();
 
-setInterval(() => {
-  let s = Math.floor((Date.now() - start)/1000);
-  document.getElementById("uptime").innerText = s + "s";
-}, 1000);
+// =========================
+// LIVE STATS
+// =========================
+async function loadStats(){
+  const res = await fetch("/api/stats");
+  const data = await res.json();
 
-async function pair() {
+  document.getElementById("uptime").innerText = data.uptime;
+  document.getElementById("memory").innerText = data.memory;
+  document.getElementById("sessions").innerText = data.sessions;
+}
+
+setInterval(loadStats, 2000);
+loadStats();
+
+// =========================
+// PAIRING
+// =========================
+async function pair(){
   const number = document.getElementById("number").value;
   const codeBox = document.getElementById("code");
   const log = document.getElementById("log");
@@ -161,8 +167,8 @@ async function pair() {
   log.innerText = "Sending request...";
 
   const res = await fetch("/api/pair", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({ number })
   });
 
@@ -175,7 +181,8 @@ async function pair() {
     log.innerText = data.message;
   }
 }
+
 </script>
 
 </body>
-  </html>
+</html>
