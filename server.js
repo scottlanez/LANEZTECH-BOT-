@@ -1,6 +1,32 @@
+const express = require('express');
+const path = require('path');
+
 const { createPairingCode, sessions } = require('./pair');
 
-// ===== PAIR ROUTE =====
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ===== STATE =====
+let pairingState = {
+  status: 'idle',
+  number: null,
+  code: null
+};
+
+// ===== HOME =====
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/index.html'));
+});
+
+// ===== HEALTH =====
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// ===== PAIR =====
 app.post('/api/pair', async (req, res) => {
   try {
     const { number } = req.body;
@@ -11,7 +37,13 @@ app.post('/api/pair', async (req, res) => {
 
     const userId = number.replace(/\D/g, '');
 
+    pairingState.status = 'connecting';
+    pairingState.number = userId;
+
     const code = await createPairingCode(userId);
+
+    pairingState.status = 'paired';
+    pairingState.code = code;
 
     return res.json({
       success: true,
@@ -19,13 +51,20 @@ app.post('/api/pair', async (req, res) => {
     });
 
   } catch (err) {
-    console.log('PAIR ERROR:', err);
+    console.log(err);
+
+    pairingState.status = 'failed';
 
     return res.json({
       success: false,
       message: 'Pairing failed'
     });
   }
+});
+
+// ===== STATUS =====
+app.get('/api/state', (req, res) => {
+  res.json(pairingState);
 });
 
 // ===== SESSION CHECK =====
@@ -37,4 +76,9 @@ app.get('/api/session/:id', (req, res) => {
   }
 
   return res.json({ status: 'inactive' });
+});
+
+// ===== START =====
+app.listen(PORT, () => {
+  console.log(`🚀 LANEZTECH running on ${PORT}`);
 });
