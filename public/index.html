@@ -6,170 +6,162 @@
 <title>LANEZTECH MD</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif;}
-
-body{
-  background:#020617;
-  color:white;
-  padding:20px;
+body {
+  margin: 0;
+  font-family: Arial;
+  background: radial-gradient(circle at top, #0a0f1f, #020617);
+  color: white;
 }
 
-/* HEADER */
-.header{
-  text-align:center;
-  margin-bottom:20px;
+.container {
+  max-width: 400px;
+  margin: auto;
+  padding: 20px;
 }
 
-.header h1{
-  font-size:26px;
+.card {
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 0 25px rgba(0,255,150,0.1);
 }
 
-.header span{color:#22c55e}
-
-/* CARDS GRID */
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-bottom:20px;
+.title {
+  font-size: 24px;
+  font-weight: bold;
 }
 
-.card{
-  background:#0f172a;
-  padding:15px;
-  border-radius:12px;
-  text-align:center;
+.green {
+  color: #00ff99;
 }
 
-/* MAIN PANEL */
-.panel{
-  background:#0f172a;
-  padding:20px;
-  border-radius:15px;
-  margin-bottom:20px;
+.status {
+  display: flex;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.05);
+  padding: 10px;
+  border-radius: 10px;
+  margin: 15px 0;
 }
 
-input{
-  width:100%;
-  padding:12px;
-  border-radius:10px;
-  border:none;
-  background:#020617;
-  color:white;
-  margin-bottom:10px;
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  margin-bottom: 10px;
+  background: #020617;
+  color: white;
 }
 
-button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  background:#22c55e;
-  font-weight:bold;
-  cursor:pointer;
+button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(90deg,#00ff99,#00ccff);
+  font-weight: bold;
+  cursor: pointer;
 }
 
-.result{
-  margin-top:10px;
-  text-align:center;
+.code {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 20px;
 }
 
-/* COMMANDS */
-.commands{
-  background:#0f172a;
-  padding:15px;
-  border-radius:15px;
-}
-
-.commands h3{
-  margin-bottom:10px;
-}
-
-.cmd{
-  background:#020617;
-  padding:8px;
-  margin:5px 0;
-  border-radius:8px;
+.logs {
+  margin-top: 20px;
+  background: black;
+  padding: 10px;
+  border-radius: 10px;
+  height: 120px;
+  overflow-y: auto;
+  font-size: 12px;
+  color: #00ff99;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  <h1>⚡ <span>LANEZTECH</span> MD</h1>
-  <p>Advanced WhatsApp Control Panel</p>
-</div>
+<div class="container">
 
-<!-- STATS -->
-<div class="grid">
-  <div class="card">
-    <h3 id="uptime">0s</h3>
-    <p>Uptime</p>
-  </div>
-  <div class="card">
-    <h3 id="sessions">0</h3>
-    <p>Sessions</p>
-  </div>
-</div>
+<div class="card">
+  <div class="title">⚡ <span class="green">LANEZTECH</span> MD</div>
+  <small>Elite WhatsApp Control Panel</small>
 
-<!-- PAIR PANEL -->
-<div class="panel">
+  <div class="status">
+    <span>🟢 Online</span>
+    <span id="latency">-- ms</span>
+  </div>
+
+  <div class="status">
+    <span>⏱ <span id="uptime">0s</span></span>
+    <span>📱 <span id="sessions">0</span></span>
+  </div>
+
   <input id="number" placeholder="2567XXXXXXXX">
+
   <button onclick="pair()">Generate Pairing Code</button>
-  <div class="result" id="result"></div>
+
+  <div class="code" id="code">Waiting...</div>
+
 </div>
 
-<!-- COMMANDS -->
-<div class="commands">
-  <h3>🤖 Bot Commands</h3>
-  <div class="cmd">.menu</div>
-  <div class="cmd">.ping</div>
-  <div class="cmd">.alive</div>
-  <div class="cmd">.owner</div>
+<div class="logs" id="logs"></div>
+
 </div>
 
 <script>
-// PAIR
-async function pair(){
+let startTime = Date.now();
+
+function log(msg) {
+  const logs = document.getElementById('logs');
+  logs.innerHTML += "> " + msg + "<br>";
+  logs.scrollTop = logs.scrollHeight;
+}
+
+// uptime
+setInterval(() => {
+  let sec = Math.floor((Date.now() - startTime)/1000);
+  document.getElementById('uptime').innerText = sec + "s";
+}, 1000);
+
+// fake latency (can connect real later)
+setInterval(() => {
+  document.getElementById('latency').innerText = Math.floor(Math.random()*50)+" ms";
+}, 2000);
+
+async function pair() {
   const number = document.getElementById('number').value;
+  const codeBox = document.getElementById('code');
 
-  document.getElementById('result').innerText = "Connecting...";
+  codeBox.innerText = "Generating...";
+  log("Pairing request sent...");
 
-  const res = await fetch('/api/pair',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({number})
-  });
+  try {
+    const res = await fetch('/api/pair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if(data.success){
-    document.getElementById('result').innerText = "CODE: "+data.code;
-  } else {
-    document.getElementById('result').innerText = "FAILED";
+    if (data.success) {
+      codeBox.innerText = data.code;
+      log("Pairing code generated ✔");
+    } else {
+      codeBox.innerText = "Failed";
+      log("Error: " + data.message);
+    }
+
+  } catch (err) {
+    codeBox.innerText = "Server Error";
+    log("Server error...");
   }
 }
-
-// LIVE STATS
-async function loadStats(){
-  const res = await fetch('/api/stats');
-  const data = await res.json();
-
-  document.getElementById('uptime').innerText = formatTime(data.uptime);
-  document.getElementById('sessions').innerText = data.sessions;
-}
-
-// FORMAT TIME
-function formatTime(sec){
-  const m = Math.floor(sec/60);
-  const s = sec%60;
-  return m+"m "+s+"s";
-}
-
-// AUTO REFRESH
-setInterval(loadStats,3000);
-loadStats();
 </script>
 
 </body>
