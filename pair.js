@@ -1,7 +1,6 @@
 const {
   default: makeWASocket,
-  useMultiFileAuthState,
-  DisconnectReason
+  useMultiFileAuthState
 } = require('@whiskeysockets/baileys');
 
 const fs = require('fs');
@@ -9,7 +8,6 @@ const path = require('path');
 
 const sessions = {};
 
-// ===== CREATE / LOAD SESSION =====
 async function getSocket(userId) {
   const sessionPath = path.join(__dirname, 'sessions', userId);
 
@@ -32,7 +30,6 @@ async function getSocket(userId) {
   return sock;
 }
 
-// ===== PAIRING (SAFE LAZY LOAD) =====
 async function createPairingCode(userId) {
   const sock = await getSocket(userId);
 
@@ -42,15 +39,13 @@ async function createPairingCode(userId) {
     const timeout = setTimeout(() => {
       if (!done) {
         done = true;
-        reject('Pairing timeout');
+        reject('Timeout');
       }
     }, 20000);
 
     sock.ev.on('connection.update', async (update) => {
-      const { connection } = update;
-
       try {
-        if (!done && connection !== 'close') {
+        if (!done) {
           const code = await sock.requestPairingCode(userId);
           done = true;
           clearTimeout(timeout);
