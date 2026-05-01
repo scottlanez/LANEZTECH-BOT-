@@ -8,54 +8,76 @@
 <style>
 body {
   margin: 0;
-  font-family: Arial;
-  background: radial-gradient(circle at top, #0b1220, #020617);
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #020617, #0f172a);
   color: white;
+  display: flex;
 }
 
-.container {
-  max-width: 420px;
-  margin: auto;
+/* SIDEBAR */
+.sidebar {
+  width: 220px;
+  background: rgba(255,255,255,0.05);
+  height: 100vh;
+  padding: 20px;
+  box-shadow: 0 0 20px rgba(0,255,150,0.05);
+}
+
+.sidebar h2 {
+  color: #00ff99;
+}
+
+.menu {
+  margin-top: 30px;
+}
+
+.menu div {
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.menu div:hover {
+  background: rgba(0,255,150,0.1);
+}
+
+/* MAIN */
+.main {
+  flex: 1;
   padding: 20px;
 }
 
 .card {
   background: rgba(255,255,255,0.05);
-  border-radius: 20px;
   padding: 20px;
-  box-shadow: 0 0 30px rgba(0,255,150,0.08);
+  border-radius: 15px;
+  margin-bottom: 20px;
 }
 
-.title {
-  font-size: 26px;
-  font-weight: bold;
-  text-align: center;
-}
-
-.green { color: #00ff99; }
-
+/* STATS */
 .stats {
   display: flex;
-  justify-content: space-between;
-  margin: 15px 0;
+  gap: 10px;
 }
 
-.box {
-  background: #0f172a;
-  padding: 10px;
-  border-radius: 10px;
-  width: 48%;
+.stat {
+  flex: 1;
   text-align: center;
+  background: #020617;
+  padding: 15px;
+  border-radius: 10px;
 }
 
+/* INPUT */
 input {
   width: 100%;
   padding: 12px;
   border-radius: 10px;
   border: none;
-  margin-top: 10px;
   background: #020617;
   color: white;
+  margin-top: 10px;
 }
 
 button {
@@ -69,67 +91,122 @@ button {
   cursor: pointer;
 }
 
-.result {
-  text-align: center;
-  margin-top: 15px;
-  font-size: 18px;
-}
-
+/* LOG */
 .log {
-  margin-top: 20px;
   background: black;
   padding: 10px;
   border-radius: 10px;
-  font-size: 12px;
   height: 120px;
   overflow-y: auto;
   color: #00ff99;
+}
+
+/* HIDE SECTIONS */
+.section {
+  display: none;
+}
+
+.active {
+  display: block;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    height: auto;
+    display: flex;
+    justify-content: space-around;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h2>⚡ LANEZTECH</h2>
 
-<div class="card">
+  <div class="menu">
+    <div onclick="show('dashboard')">🏠 Dashboard</div>
+    <div onclick="show('pair')">📲 Pair Device</div>
+    <div onclick="show('commands')">🤖 Commands</div>
+  </div>
+</div>
 
-  <div class="title">⚡ <span class="green">LANEZTECH</span> MD</div>
+<!-- MAIN -->
+<div class="main">
 
-  <div class="stats">
-    <div class="box">
-      ⏱ <div id="uptime">0s</div>
-    </div>
-    <div class="box">
-      📡 <div id="requests">0</div>
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="section active">
+    <div class="card">
+      <h2>Dashboard</h2>
+
+      <div class="stats">
+        <div class="stat">
+          ⏱ <div id="uptime">0s</div>
+        </div>
+        <div class="stat">
+          📡 <div id="requests">0</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <input id="number" placeholder="Enter number (2567XXXXXXX)">
+  <!-- PAIR -->
+  <div id="pair" class="section">
+    <div class="card">
+      <h2>Pair WhatsApp</h2>
 
-  <button onclick="pair()">Generate Pair Code</button>
+      <input id="number" placeholder="2567XXXXXXX">
 
-  <div class="result" id="result">Waiting...</div>
+      <button onclick="pair()">Generate Pair Code</button>
 
-</div>
+      <h3 id="result">Waiting...</h3>
 
-<div class="log" id="log"></div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <!-- COMMANDS -->
+  <div id="commands" class="section">
+    <div class="card">
+      <h2>Bot Commands</h2>
+
+      <p>.menu</p>
+      <p>.ping</p>
+      <p>.alive</p>
+      <p>.owner</p>
+    </div>
+  </div>
 
 </div>
 
 <script>
 
+// SWITCH SECTIONS
+function show(section){
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(section).classList.add('active');
+}
+
+// LOG
 function log(msg){
   const el = document.getElementById('log');
   el.innerHTML += "> " + msg + "<br>";
   el.scrollTop = el.scrollHeight;
 }
 
+// PAIR
 async function pair(){
   const number = document.getElementById('number').value;
 
   document.getElementById('result').innerText = "Generating...";
-
   log("Sending request...");
 
   try {
@@ -149,13 +226,13 @@ async function pair(){
       log("Error: " + data.message);
     }
 
-  } catch (err) {
+  } catch {
     document.getElementById('result').innerText = "Server error";
     log("Server error");
   }
 }
 
-// LIVE STATS
+// STATS
 async function loadStats(){
   const res = await fetch('/api/stats');
   const data = await res.json();
