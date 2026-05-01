@@ -9,6 +9,7 @@ const path = require('path');
 
 const sessions = {};
 
+// ===== CREATE SESSION =====
 async function startSession(userId) {
   const sessionPath = path.join(__dirname, 'sessions', userId);
 
@@ -20,6 +21,7 @@ async function startSession(userId) {
 
   const sock = makeWASocket({
     auth: state,
+    printQRInTerminal: false,
     browser: ['LANEZTECH', 'Chrome', '1.0.0']
   });
 
@@ -30,51 +32,56 @@ async function startSession(userId) {
   return sock;
 }
 
-// ✅ SAFE PAIRING FUNCTION
-async function createPairingCode(userId) {
-  const sock = await startSession(userId);
-
+// ===== WAIT UNTIL SOCKET IS READY =====
+function waitForConnection(sock) {
   return new Promise((resolve, reject) => {
-    let resolved = false;
+    let done = false;
 
-    sock.ev.on('connection.update', async (update) => {
-      const { connection, lastDisconnect } = update;
+    const timeout = setTimeout(() => {
+      if (!done) {
+        done = true;
+        reject('Connection timeout');
+      }
+    }, 20000);
 
-      if (connection === 'connecting') {
-        console.log('🔄 Connecting...');
+    sock.ev.on('connection.update', (update) => {
+      const { connection } = update;
+
+      if (connection === 'open' && !done) {
+        done = true;
+        clearTimeout(timeout);
+        resolve(true);
       }
 
-      if (connection === 'open') {
-        console.log('✅ Connected');
-      }
-
-      if (connection === 'close') {
-        console.log('❌ Closed');
-
-        if (!resolved) {
-          reject('Connection closed before pairing');
-        }
-      }
-
-      // 🔥 THIS IS THE FIX
-      if (!resolved) {
-        try {
-          const code = await sock.requestPairingCode(userId);
-          resolved = true;
-          resolve(code);
-        } catch (err) {
-          reject(err);
-        }
+      if (connection === 'close' && !done) {
+        done = true;
+        clearTimeout(timeout);
+        reject('Connection closed');
       }
     });
-
-    // ⛔ safety timeout
-    setTimeout(() => {
-      if (!resolved) {
-        reject('Timeout generating pairing code');
-      }
-    }, 15000);
   });
 }
 
-module.exports = { createPairingCode, sessions };
+// ===== MAIN PAIRING FUNCTION =====
+async function createPairingCode(userId) {
+  const sock = await startSession(userId);
+
+  try {
+    // wait until WhatsApp socket is fully ready
+    await waitForConnection(sock);
+
+    // now safe to request pairing code
+    const code = await sock.requestPairingCode(userId);
+
+    return code;
+
+  } catch (err) {
+    console.log('PAIR ERROR:', err);
+    throw err;
+  }
+}
+
+module.exports = {
+  createPairingCode,
+  sessions
+};
