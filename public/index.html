@@ -5,11 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LANEZTECH MD</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
 <style>
-body {
+* {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #020617, #0f172a);
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #020617, #020617);
   color: white;
   display: flex;
 }
@@ -17,234 +24,11 @@ body {
 /* SIDEBAR */
 .sidebar {
   width: 220px;
-  background: rgba(255,255,255,0.05);
   height: 100vh;
-  padding: 20px;
-  box-shadow: 0 0 20px rgba(0,255,150,0.05);
-}
-
-.sidebar h2 {
-  color: #00ff99;
-}
-
-.menu {
-  margin-top: 30px;
-}
-
-.menu div {
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
-.menu div:hover {
-  background: rgba(0,255,150,0.1);
-}
-
-/* MAIN */
-.main {
-  flex: 1;
-  padding: 20px;
-}
-
-.card {
-  background: rgba(255,255,255,0.05);
-  padding: 20px;
-  border-radius: 15px;
-  margin-bottom: 20px;
-}
-
-/* STATS */
-.stats {
-  display: flex;
-  gap: 10px;
-}
-
-.stat {
-  flex: 1;
-  text-align: center;
   background: #020617;
-  padding: 15px;
-  border-radius: 10px;
+  padding: 20px;
+  border-right: 1px solid rgba(255,255,255,0.05);
 }
 
-/* INPUT */
-input {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: #020617;
-  color: white;
-  margin-top: 10px;
-}
-
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(90deg,#00ff99,#00ccff);
-  font-weight: bold;
-  cursor: pointer;
-}
-
-/* LOG */
-.log {
-  background: black;
-  padding: 10px;
-  border-radius: 10px;
-  height: 120px;
-  overflow-y: auto;
-  color: #00ff99;
-}
-
-/* HIDE SECTIONS */
-.section {
-  display: none;
-}
-
-.active {
-  display: block;
-}
-
-/* MOBILE */
-@media (max-width: 768px) {
-  body {
-    flex-direction: column;
-  }
-  .sidebar {
-    width: 100%;
-    height: auto;
-    display: flex;
-    justify-content: space-around;
-  }
-}
-</style>
-</head>
-
-<body>
-
-<!-- SIDEBAR -->
-<div class="sidebar">
-  <h2>⚡ LANEZTECH</h2>
-
-  <div class="menu">
-    <div onclick="show('dashboard')">🏠 Dashboard</div>
-    <div onclick="show('pair')">📲 Pair Device</div>
-    <div onclick="show('commands')">🤖 Commands</div>
-  </div>
-</div>
-
-<!-- MAIN -->
-<div class="main">
-
-  <!-- DASHBOARD -->
-  <div id="dashboard" class="section active">
-    <div class="card">
-      <h2>Dashboard</h2>
-
-      <div class="stats">
-        <div class="stat">
-          ⏱ <div id="uptime">0s</div>
-        </div>
-        <div class="stat">
-          📡 <div id="requests">0</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- PAIR -->
-  <div id="pair" class="section">
-    <div class="card">
-      <h2>Pair WhatsApp</h2>
-
-      <input id="number" placeholder="2567XXXXXXX">
-
-      <button onclick="pair()">Generate Pair Code</button>
-
-      <h3 id="result">Waiting...</h3>
-
-      <div class="log" id="log"></div>
-    </div>
-  </div>
-
-  <!-- COMMANDS -->
-  <div id="commands" class="section">
-    <div class="card">
-      <h2>Bot Commands</h2>
-
-      <p>.menu</p>
-      <p>.ping</p>
-      <p>.alive</p>
-      <p>.owner</p>
-    </div>
-  </div>
-
-</div>
-
-<script>
-
-// SWITCH SECTIONS
-function show(section){
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById(section).classList.add('active');
-}
-
-// LOG
-function log(msg){
-  const el = document.getElementById('log');
-  el.innerHTML += "> " + msg + "<br>";
-  el.scrollTop = el.scrollHeight;
-}
-
-// PAIR
-async function pair(){
-  const number = document.getElementById('number').value;
-
-  document.getElementById('result').innerText = "Generating...";
-  log("Sending request...");
-
-  try {
-    const res = await fetch('/api/pair', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ number })
-    });
-
-    const data = await res.json();
-
-    if(data.success){
-      document.getElementById('result').innerText = data.code;
-      log("Code generated ✔");
-    } else {
-      document.getElementById('result').innerText = "Failed";
-      log("Error: " + data.message);
-    }
-
-  } catch {
-    document.getElementById('result').innerText = "Server error";
-    log("Server error");
-  }
-}
-
-// STATS
-async function loadStats(){
-  const res = await fetch('/api/stats');
-  const data = await res.json();
-
-  document.getElementById('uptime').innerText = data.uptime + "s";
-  document.getElementById('requests').innerText = data.requests;
-}
-
-setInterval(loadStats, 2000);
-loadStats();
-
-</script>
-
-</body>
-</html>
+.logo-box {
+  display
